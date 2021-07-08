@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/master.swiftdeps"
+  },
+  "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/Sources/ContentBlockerGenLib/ContentBlockerGenLib.swift": {
+    "dependencies": "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/ContentBlockerGenLib.d",
+    "object": "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/ContentBlockerGenLib.swift.o",
+    "swiftmodule": "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/ContentBlockerGenLib~partial.swiftmodule",
+    "swift-dependencies": "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/ContentBlockerGenLib.swiftdeps"
+  }
+}

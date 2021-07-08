@@ -1,0 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+NSLocationWhenInUseUsageDescription = "Our Browser may require to check your location in some specific circumstances in order to allow you to access further provided features of e-commerce websites.";
+NSPhotoLibraryAddUsageDescription = "This lets you save photos.";
+NSCameraUsageDescription = "This lets you take and upload photos.";
+NSMicrophoneUsageDescription = "This lets you take and upload videos.";
+ShortcutItemTitleNewTab = "New Tab";
+ShortcutItemTitleNewPrivateTab = "New Private Tab";
+ShortcutItemTitleQRCode = "Scan QR Code";
