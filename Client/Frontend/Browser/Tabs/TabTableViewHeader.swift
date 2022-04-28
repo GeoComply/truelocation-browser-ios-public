@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
-class TabTableViewHeader: UITableViewHeaderFooterView, Themeable {
+class TabTableViewHeader: UITableViewHeaderFooterView, NotificationThemeable {
     private struct UX {
         static let titleHorizontalPadding: CGFloat = 15
         static let titleVerticalPadding: CGFloat = 6
@@ -27,8 +27,6 @@ class TabTableViewHeader: UITableViewHeaderFooterView, Themeable {
         return headerLabel
     }()
 
-    fileprivate lazy var bordersHelper = ThemedHeaderFooterViewBordersHelper()
-
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
         contentView.addSubview(titleLabel)
@@ -41,13 +39,8 @@ class TabTableViewHeader: UITableViewHeaderFooterView, Themeable {
     }
 
     func applyTheme() {
-        if #available(iOS 13.0, *) {
-            contentView.backgroundColor = UIColor.systemGroupedBackground
-            titleLabel.textColor = UIColor.secondaryLabel
-        } else {
-            contentView.backgroundColor = UIColor.theme.tableView.headerBackground
-            titleLabel.textColor = UIColor.theme.tableView.headerTextLight
-        }
+        contentView.backgroundColor = UIColor.systemGroupedBackground
+        titleLabel.textColor = UIColor.secondaryLabel
     }
 
     override func prepareForReuse() {

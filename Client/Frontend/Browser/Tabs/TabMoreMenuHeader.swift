@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import UIKit
@@ -10,7 +10,7 @@ class TabMoreMenuHeader: UIView {
         let imgView = UIImageView()
         imgView.contentMode = .scaleAspectFill
         imgView.clipsToBounds = true
-        imgView.layer.cornerRadius = TabTrayV2ControllerUX.cornerRadius
+        imgView.layer.cornerRadius = ChronologicalTabsControllerUX.cornerRadius
         imgView.layer.borderWidth = 1
         imgView.layer.borderColor = UIColor.Photon.Grey30.cgColor
         return imgView
@@ -52,37 +52,31 @@ class TabMoreMenuHeader: UIView {
         
         imageView.snp.makeConstraints { make in
             make.height.width.equalTo(100)
-            make.leading.equalToSuperview().offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
-            make.top.equalToSuperview().offset(TabTrayV2ControllerUX.screenshotMarginTopBottom)
-            make.bottom.equalToSuperview().offset(-TabTrayV2ControllerUX.screenshotMarginTopBottom)
+            make.leading.equalToSuperview().offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
+            make.top.equalToSuperview().offset(ChronologicalTabsControllerUX.screenshotMarginTopBottom)
+            make.bottom.equalToSuperview().offset(-ChronologicalTabsControllerUX.screenshotMarginTopBottom)
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(imageView.snp.trailing).offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
-            make.top.equalToSuperview().offset(TabTrayV2ControllerUX.textMarginTopBottom)
+            make.leading.equalTo(imageView.snp.trailing).offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
+            make.top.equalToSuperview().offset(ChronologicalTabsControllerUX.textMarginTopBottom)
             make.bottom.equalTo(descriptionLabel.snp.top)
             make.trailing.equalToSuperview().offset(-16)
         }
         
         descriptionLabel.snp.makeConstraints { make in
-            make.leading.equalTo(imageView.snp.trailing).offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
+            make.leading.equalTo(imageView.snp.trailing).offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
             make.trailing.equalToSuperview()
             make.top.equalTo(titleLabel.snp.bottom).offset(3)
-            make.bottom.equalToSuperview().offset(-TabTrayV2ControllerUX.textMarginTopBottom * CGFloat(titleLabel.numberOfLines))
+            make.bottom.equalToSuperview().offset(-ChronologicalTabsControllerUX.textMarginTopBottom * CGFloat(titleLabel.numberOfLines))
         }
         
         applyTheme()
     }
     
     func applyTheme() {
-        if #available(iOS 13.0, *) {
-            backgroundColor = UIColor.secondarySystemGroupedBackground
-            titleLabel.textColor = UIColor.label
-            descriptionLabel.textColor = UIColor.secondaryLabel
-        } else {
-            backgroundColor = UIColor.theme.tableView.rowBackground
-            titleLabel.textColor = UIColor.theme.tableView.rowText
-            descriptionLabel.textColor = UIColor.theme.tableView.rowDetailText
-        }
+        backgroundColor = UIColor.secondarySystemGroupedBackground
+        titleLabel.textColor = UIColor.label
+        descriptionLabel.textColor = UIColor.secondaryLabel
     }
 }

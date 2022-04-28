@@ -1,11 +1,11 @@
 /* Close Private Tabs button label */
-"TodayWidget.ClosePrivateTabsButton" = "დახურვა პირადი ჩანართების";
+"TodayWidget.ClosePrivateTabsButton" = "პირადი ჩანართების დახურვა";
 
 /* Close Private Tabs */
-"TodayWidget.ClosePrivateTabsLabelV2" = "დახურვა პირადი ჩანართების";
+"TodayWidget.ClosePrivateTabsLabelV2" = "პირადი ჩანართების\nდახურვა";
 
 /* Close Private Tabs */
-"TodayWidget.ClosePrivateTabsLabelV3" = "დახურვა პირადი ჩანართების";
+"TodayWidget.ClosePrivateTabsLabelV3" = "პირადი\nჩანართების\nდახურვა";
 
 /* Copied Link from clipboard displayed */
 "TodayWidget.CopiedLinkLabelFromPasteBoardV1" = "ბმულის ასლის აღებულია";
@@ -41,7 +41,7 @@
 "TodayWidget.MoreTabsLabel" = "+%d კიდევ…";
 
 /* Open New Private Tab button label for medium size action */
-"TodayWidget.NewPrivateTabButtonLabelV2" = "ძიება პირად ჩანართში";
+"TodayWidget.NewPrivateTabButtonLabelV2" = "პირად ჩანართში მოძიება";
 
 /* Open New Tab button label */
 "TodayWidget.NewSearchButtonLabelV1" = "Firefox-ში მოძიება";
@@ -82,6 +82,9 @@
 /* Quick Actions title when widget enters edit mode */
 "TodayWidget.QuickActionsGalleryTitle" = "სწრაფი მოქმედებები";
 
+/* Firefox shortcuts title when widget enters edit mode. Do not translate the word Firefox. */
+"TodayWidget.QuickActionsGalleryTitleV2" = "Firefox მალსახმობები";
+
 /* Sub label for medium size quick action widget */
 "TodayWidget.QuickActionsSubLabel" = "Firefox – სწრაფი მოქმედებები";
 
@@ -107,16 +110,22 @@
 "TodayWidget.SearchInFirefoxV2" = "Firefox-ში მოძიება";
 
 /* Search in private tab */
-"TodayWidget.SearchInPrivateTabLabelV2" = "ძიება პირად ჩანართში";
+"TodayWidget.SearchInPrivateTabLabelV2" = "პირად ჩანართში\nმოძიება";
 
 /* Description for top sites widget to add Firefox top sites shotcuts to home screen */
-"TodayWidget.TopSitesGalleryDescription" = "დაამატეთ მალსახმობები ხშირად და ბოლოს მონახულებული საიტების.";
+"TodayWidget.TopSitesGalleryDescription" = "დაამატეთ მალსახმობები ხშირად და ბოლოს მონახულებული საიტებისთვის.";
 
 /* Title for top sites widget to add Firefox top sites shotcuts to home screen */
 "TodayWidget.TopSitesGalleryTitle" = "რჩეული საიტები";
 
+/* Title for top sites widget to add Firefox top sites shotcuts to home screen */
+"TodayWidget.TopSitesGalleryTitleV2" = "საიტის მალსახმობები";
+
 /* Sub label for Top Sites widget */
 "TodayWidget.TopSitesSubLabel" = "Firefox – რჩეული საიტები";
+
+/* Sub label for Shortcuts widget */
+"TodayWidget.TopSitesSubLabel2" = "Firefox - ვებსაიტის მალსახმობები";
 
 /* View More for Quick View widget in Gallery View where we don't know how many tabs might be opened */
 "TodayWidget.ViewMore" = "მეტის ნახვა";

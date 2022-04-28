@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>AdjustAppToken</key>
-	<string>$(ADJUST_APP_TOKEN)</string>
-	<key>AdjustEnvironment</key>
-	<string>$(ADJUST_ENVIRONMENT)</string>
 	<key>AppIdentifierPrefix</key>
 	<string>$(APP_IDENTIFIER_PREFIX)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
@@ -34,9 +30,6 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
-	<array>
-		
-	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -59,21 +52,20 @@
 		<string>org-appextension-feature-password-management</string>
 		<string>googlegmail</string>
 		<string>fastmail</string>
+		<string>whatsapp</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
-	<key>LeanplumAppId</key>
-	<string></string>
-	<key>LeanplumDevelopmentKey</key>
-	<string></string>
-	<key>LeanplumProductionKey</key>
-	<string></string>
 	<key>MozDevelopmentTeam</key>
 	<string>$(DEVELOPMENT_TEAM)</string>
-	<key>MozWhatsNewTopic</key>
-	<string>whats-new-ios-18</string>
+	<key>MozInternalURLScheme</key>
+	<string>$(MOZ_INTERNAL_URL_SCHEME)</string>
+	<key>MozPublicURLScheme</key>
+	<string>$(MOZ_PUBLIC_URL_SCHEME)</string>
+	<key>MozWallpaperURLScheme</key>
+	<string>$(MOZ_WALLPAPER_ASSET_URL)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -86,7 +78,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>This lets you take and upload photos.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Firefox requires Face ID to access your saved logins.</string>
+	<string>Our Browser  requires Face ID to access your saved logins.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string></string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Our Browser may require to check your location in some specific circumstances in order to allow you to access further provided features of e-commerce websites.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
@@ -107,10 +101,12 @@
 		<string>QuickLinkSelectionIntent</string>
 		<string>org.mozilla.ios.firefox.browsing</string>
 	</array>
+	<key>NimbusURL</key>
+	<string>$(NIMBUS_URL)</string>
 	<key>PocketEnvironmentAPIKey</key>
 	<string>$(POCKET_API_KEY)</string>
-	<key>SentryDSN</key>
-	<string>$(SENTRY_DSN)</string>
+	<key>SentryCloudDSN</key>
+	<string>$(SENTRY_CLOUD_DSN)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>OpenSans-Regular.ttf</string>
@@ -119,6 +115,10 @@
 		<string>CharisSILBI.ttf</string>
 		<string>CharisSILI.ttf</string>
 		<string>CharisSILR.ttf</string>
+		<string>NewYorkMedium-Bold.otf</string>
+		<string>NewYorkMedium-BoldItalic.otf</string>
+		<string>NewYorkMedium-Regular.otf</string>
+		<string>NewYorkMedium-RegularItalic.otf</string>
 		<string>FiraSans-Bold.ttf</string>
 		<string>FiraSans-BoldItalic.ttf</string>
 		<string>FiraSans-Book.ttf</string>
@@ -140,6 +140,8 @@
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER).NewTab</string>
 		</dict>
 	</array>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
 import UIKit
@@ -11,35 +11,47 @@ import SyncTelemetry
 import SnapKit
 
 class LibraryShortcutView: UIView {
-    static let spacing: CGFloat = 15
+    lazy var button: UIButton = {
+        let button = UIButton()
+        button.imageView?.layer.masksToBounds = true
+        button.layer.cornerRadius = 8
+        button.layer.borderColor = UIColor(white: 0.0, alpha: 0.1).cgColor
+        button.layer.borderWidth = 0.5
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 6
+        return button
+    }()
 
-    var button = UIButton()
-    var title = UILabel()
+    lazy var titleLabel: UILabel = {
+        let titleLabel = UILabel()
+        titleLabel.textAlignment = .center
+        titleLabel.lineBreakMode = .byWordWrapping
+        titleLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
+        titleLabel.preferredMaxLayoutWidth = 70
+        return titleLabel
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+
         addSubview(button)
-        addSubview(title)
+        addSubview(titleLabel)
+
+        self.snp.makeConstraints { make in
+            make.width.greaterThanOrEqualTo(60)
+            make.height.equalTo(90)
+        }
+
         button.snp.makeConstraints { make in
-            make.top.equalToSuperview()
+            make.size.equalTo(60)
             make.centerX.equalToSuperview()
-            make.width.equalTo(self).offset(-LibraryShortcutView.spacing)
-            make.height.equalTo(self.snp.width).offset(-LibraryShortcutView.spacing)
+            make.top.equalToSuperview()
         }
-        title.adjustsFontSizeToFitWidth = true
-        title.minimumScaleFactor = 0.7
-        title.lineBreakMode = .byTruncatingTail
-        title.font = DynamicFontHelper.defaultHelper.SmallSizeRegularWeightAS
-        title.textAlignment = .center
-        title.snp.makeConstraints { make in
-            make.top.equalTo(button.snp.bottom).offset(5)
-            make.leading.trailing.equalToSuperview()
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalTo(button.snp.bottom).offset(8)
+            make.leading.trailing.centerX.equalToSuperview()
         }
-        button.imageView?.contentMode = .scaleToFill
-        button.contentVerticalAlignment = .fill
-        button.contentHorizontalAlignment = .fill
-        button.imageEdgeInsets = UIEdgeInsets(equalInset: LibraryShortcutView.spacing)
-        button.tintColor = .white
     }
 
     required init(coder: NSCoder) {
@@ -47,7 +59,11 @@ class LibraryShortcutView: UIView {
     }
 
     override func layoutSubviews() {
-        button.layer.cornerRadius = (self.frame.width - LibraryShortcutView.spacing) / 2
+        button.imageView?.snp.remakeConstraints { make in
+            make.size.equalTo(22)
+            make.center.equalToSuperview()
+        }
+
         super.layoutSubviews()
     }
 }

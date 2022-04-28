@@ -1,17 +1,20 @@
 /* Button string to open settings that allows user to switch their default browser to Firefox. */
-"DefaultBrowserCard.Button" = "Vai a Impostazioni";
+"DefaultBrowserCard.Button" = "Apri Impostazioni";
+
+/* Button string to learn how to set your default browser. */
+"DefaultBrowserCard.Button.v2" = "Scopri come fare";
 
 /* Description for small card shown that allows user to switch their default browser to Firefox. */
-"DefaultBrowserCard.Description" = "Apri i link di siti web, email e messaggi in Firefox per impostazione predefinita.";
+"DefaultBrowserCard.Description" = "Utilizza automaticamente Firefox per aprire link in siti web, email e messaggi.";
 
 /* Title for small card shown that allows user to switch their default browser to Firefox. */
 "DefaultBrowserCard.Title" = "Cambia il browser predefinito";
 
 /* Button string to open settings that allows user to switch their default browser to Firefox. */
-"DefaultBrowserOnboarding.Button" = "Vai a Impostazioni";
+"DefaultBrowserOnboarding.Button" = "Apri Impostazioni";
 
 /* Description for default browser onboarding card. */
-"DefaultBrowserOnboarding.Description1" = "1. Vai a Impostazioni";
+"DefaultBrowserOnboarding.Description1" = "1. Apri Impostazioni";
 
 /* Description for default browser onboarding card. */
 "DefaultBrowserOnboarding.Description2" = "2. Tocca App per il browser di default";

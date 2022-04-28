@@ -1,5 +1,0 @@
-version: "Apple Swift version 5.3.2 (swiftlang-1200.0.45 clang-1200.0.32.28)"
-options: "d4923bbdbb5874208c98b7717a17e9f0"
-build_time: [1624267253, 851132000]
-inputs:
-  "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/Sources/ContentBlockerGen/main.swift": [1615442831, 502230290]

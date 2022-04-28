@@ -1,10 +1,15 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Storage
 import Shared
+import AuthenticationServices
+
+struct NewSearchInProgressError: MaybeErrorType {
+    public let description: String
+}
 
 // MARK: - Main View Model
 // Login List View Model
@@ -41,7 +46,7 @@ final class LoginListViewModel {
 
     func loadLogins(_ query: String? = nil, loginDataSource: LoginDataSource) {
         // Fill in an in-flight query and re-query
-        activeLoginQuery?.fillIfUnfilled(Maybe(success: []))
+        activeLoginQuery?.fillIfUnfilled(Maybe(failure: NewSearchInProgressError(description: "Updated search string provided")))
         activeLoginQuery = queryLogins(query ?? "")
         activeLoginQuery! >>== self.setLogins
         // Loading breaches is a heavy operation hence loading it once per opening logins screen
@@ -140,6 +145,10 @@ final class LoginListViewModel {
             }
         }
     }
+    
+    public func save(loginRecord: LoginEntry) -> Deferred<Maybe<String>> {
+        return profile.logins.addLogin(login: loginRecord)
+    }
 
     func setBreachIndexPath(indexPath: IndexPath) {
         self.breachIndexPath = [indexPath]
@@ -163,13 +172,4 @@ final class LoginListViewModel {
 protocol LoginViewModelDelegate: AnyObject {
     func loginSectionsDidUpdate()
     func breachPathDidUpdate()
-}
-
-extension LoginRecord: Equatable, Hashable {
-    public static func == (lhs: LoginRecord, rhs: LoginRecord) -> Bool {
-        return lhs.id == rhs.id && lhs.hostname == rhs.hostname && lhs.credentials == rhs.credentials
-    }
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.id)
-    }
 }

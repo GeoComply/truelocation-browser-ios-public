@@ -1,17 +1,24 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
 import Storage
 
 private let PocketEnvAPIKey = "PocketEnvironmentAPIKey"
+// GG Overriden
 private let PocketGlobalFeed = ""
+/*
+private let PocketGlobalFeed = "https://getpocket.cdn.mozilla.net/v3/firefox/global-recs"
+ */
 private let MaxCacheAge: Timestamp = OneMinuteInMilliseconds * 60 // 1 hour in milliseconds
-private let SupportedLocales = ["en_US", "en_GB", "en_ZA", "de_DE", "de_AT", "de_CH"]
+private let SupportedLocales = ["en_CA", "en_US", "en_GB", "en_ZA", "de_DE", "de_AT", "de_CH"]
+// GG Overriden
 public let PocketVideoFeed = ""
-
+/*
+public let PocketVideoFeed = "https://getpocket.cdn.mozilla.net/v3/firefox/global-video-recs"
+*/
 /*s
  The Pocket class is used to fetch stories from the Pocked API.
  Right now this only supports the global feed
@@ -124,8 +131,8 @@ class Pocket {
         let locale = Locale.current.identifier
         let pocketLocale = locale.replacingOccurrences(of: "_", with: "-")
         var params = [URLQueryItem(name: "count", value: String(items)), URLQueryItem(name: "locale_lang", value: pocketLocale), URLQueryItem(name: "version", value: "3")]
-        if let consumerKey = Bundle.main.object(forInfoDictionaryKey: PocketEnvAPIKey) as? String {
-            params.append(URLQueryItem(name: "consumer_key", value: consumerKey))
+        if let _ = Bundle.main.object(forInfoDictionaryKey: PocketEnvAPIKey) as? String {
+            params.append(URLQueryItem(name: "consumer_key", value: "69688-0187b8205b7a75b05d897e97"))
         }
 
         guard let feedURL = URL(string: pocketGlobalFeed)?.withQueryParams(params) else {

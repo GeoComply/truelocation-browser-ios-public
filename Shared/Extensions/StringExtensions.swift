@@ -1,11 +1,21 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import UIKit
 
 public extension String {
+    
+    //Returns hostname from URL
+    var titleFromHostname: String {
+        guard let displayName = self.asURL?.host  else { return self }
+        return displayName
+            .replacingOccurrences(of: "^http://", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "^https://", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "^www\\d*\\.", with: "", options: .regularExpression)
+    }
+    
     func escape() -> String? {
         // We can't guaruntee that strings have a valid string encoding, as this is an entry point for tainted data,
         // we should be very careful about forcefully dereferencing optional types.

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Storage
@@ -12,8 +12,11 @@ struct SiteTableViewControllerUX {
     static let HeaderTextMargin = CGFloat(16)
 }
 
-class SiteTableViewHeader: UITableViewHeaderFooterView, Themeable {
-    let titleLabel = UILabel()
+class SiteTableViewHeader: UITableViewHeaderFooterView, NotificationThemeable {
+    let titleLabel: UILabel = .build { label in
+        label.font = DynamicFontHelper.defaultHelper.DeviceFontMediumBold
+        label.textColor = UIColor.theme.tableView.headerTextDark
+    }
     fileprivate let bordersHelper = ThemedHeaderFooterViewBordersHelper()
 
     override var textLabel: UILabel? {
@@ -22,22 +25,19 @@ class SiteTableViewHeader: UITableViewHeaderFooterView, Themeable {
 
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
-        titleLabel.font = DynamicFontHelper.defaultHelper.DeviceFontMediumBold
-
+        
+        translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(titleLabel)
 
-        bordersHelper.initBorders(view: self)
+        bordersHelper.initBorders(view: self.contentView)
         setDefaultBordersValues()
+        
+        backgroundView = UIView()
 
-        // A table view will initialize the header with CGSizeZero before applying the actual size. Hence, the label's constraints
-        // must not impose a minimum width on the content view.
-        titleLabel.snp.makeConstraints { make in
-            make.left.equalTo(contentView).offset(SiteTableViewControllerUX.HeaderTextMargin).priority(1000)
-            make.right.equalTo(contentView).offset(-SiteTableViewControllerUX.HeaderTextMargin).priority(1000)
-            make.left.greaterThanOrEqualTo(contentView) // Fallback for when the left space constraint breaks
-            make.right.lessThanOrEqualTo(contentView) // Fallback for when the right space constraint breaks
-            make.centerY.equalTo(contentView)
-        }
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: CGFloat(SiteTableViewControllerUX.HeaderTextMargin)),
+            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        ])
 
         applyTheme()
     }
@@ -54,7 +54,7 @@ class SiteTableViewHeader: UITableViewHeaderFooterView, Themeable {
 
     func applyTheme() {
         titleLabel.textColor = UIColor.theme.tableView.headerTextDark
-        contentView.backgroundColor = UIColor.theme.tableView.headerBackground
+        backgroundView?.backgroundColor = UIColor.theme.tableView.selectedBackground
         bordersHelper.applyTheme()
     }
 
@@ -72,13 +72,38 @@ class SiteTableViewHeader: UITableViewHeaderFooterView, Themeable {
  * Provides base shared functionality for site rows and headers.
  */
 @objcMembers
-class SiteTableViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, Themeable {
-    fileprivate let CellIdentifier = "CellIdentifier"
-    fileprivate let HeaderIdentifier = "HeaderIdentifier"
+class SiteTableViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, NotificationThemeable {
+    let CellIdentifier = "CellIdentifier"
+    let OneLineCellIdentifier = "OneLineCellIdentifier"
+    let HeaderIdentifier = "HeaderIdentifier"
     let profile: Profile
 
     var data: Cursor<Site> = Cursor<Site>(status: .success, msg: "No data set")
-    var tableView = UITableView()
+    lazy var tableView: UITableView = .build { [weak self] table in
+        guard let self = self else { return }
+        table.delegate = self
+        table.dataSource = self
+        table.register(TwoLineImageOverlayCell.self, forCellReuseIdentifier: self.CellIdentifier)
+        table.register(OneLineTableViewCell.self, forCellReuseIdentifier: self.OneLineCellIdentifier)
+        table.register(SiteTableViewHeader.self, forHeaderFooterViewReuseIdentifier: self.HeaderIdentifier)
+        table.layoutMargins = .zero
+        table.keyboardDismissMode = .onDrag
+        table.accessibilityIdentifier = "SiteTable"
+        table.cellLayoutMarginsFollowReadableWidth = false
+        table.estimatedRowHeight = SiteTableViewControllerUX.RowHeight
+        table.setEditing(false, animated: false)
+        
+        if let _ = self as? HomePanelContextMenu {
+            table.dragDelegate = self
+        }
+        
+        // Set an empty footer to prevent empty cells from appearing in the list.
+        table.tableFooterView = UIView()
+        
+        if #available(iOS 15.0, *) {
+            table.sectionHeaderTopPadding = 0
+        }
+    }
 
     private override init(nibName: String?, bundle: Bundle?) {
         fatalError("init(coder:) has not been implemented")
@@ -102,24 +127,6 @@ class SiteTableViewController: UIViewController, UITableViewDelegate, UITableVie
             make.edges.equalTo(self.view)
             return
         }
-
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(SiteTableViewCell.self, forCellReuseIdentifier: CellIdentifier)
-        tableView.register(SiteTableViewHeader.self, forHeaderFooterViewReuseIdentifier: HeaderIdentifier)
-        tableView.layoutMargins = .zero
-        tableView.keyboardDismissMode = .onDrag
-
-        tableView.accessibilityIdentifier = "SiteTable"
-        tableView.cellLayoutMarginsFollowReadableWidth = false
-        tableView.estimatedRowHeight = SiteTableViewControllerUX.RowHeight
-
-        // Set an empty footer to prevent empty cells from appearing in the list.
-        tableView.tableFooterView = UIView()
-
-        if let _ = self as? HomePanelContextMenu {
-            tableView.dragDelegate = self
-        }
     }
 
     deinit {
@@ -138,12 +145,10 @@ class SiteTableViewController: UIViewController, UITableViewDelegate, UITableVie
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         tableView.setEditing(false, animated: false)
-        coordinator.animate(alongsideTransition: { context in
-            //The AS context menu does not behave correctly. Dismiss it when rotating.
-            if let _ = self.presentedViewController as? PhotonActionSheet {
-                self.presentedViewController?.dismiss(animated: true, completion: nil)
-            }
-        }, completion: nil)
+        // The AS context menu does not behave correctly. Dismiss it when rotating.
+        if let _ = self.presentedViewController as? PhotonActionSheet {
+            self.presentedViewController?.dismiss(animated: true, completion: nil)
+        }
     }
 
     func reloadData() {
@@ -196,7 +201,7 @@ class SiteTableViewController: UIViewController, UITableViewDelegate, UITableVie
         navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.theme.tableView.headerTextDark]
         setNeedsStatusBarAppearanceUpdate()
 
-        tableView.backgroundColor = UIColor.theme.tableView.rowBackground
+        tableView.backgroundColor = UIColor.theme.homePanel.panelBackground
         tableView.separatorColor = UIColor.theme.tableView.separator
         if let rows = tableView.indexPathsForVisibleRows {
             tableView.reloadRows(at: rows, with: .none)
@@ -205,7 +210,6 @@ class SiteTableViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 }
 
-@available(iOS 11.0, *)
 extension SiteTableViewController: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
         guard let homePanelVC = self as? HomePanelContextMenu, let site = homePanelVC.getSiteDetails(for: indexPath), let url = URL(string: site.url), let itemProvider = NSItemProvider(contentsOf: url) else {

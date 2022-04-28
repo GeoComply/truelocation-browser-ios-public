@@ -7,6 +7,9 @@
 /* Close Private Tabs */
 "TodayWidget.ClosePrivateTabsLabelV3" = "סגירת לשוניות פרטיות";
 
+/* Copied Link from clipboard displayed */
+"TodayWidget.CopiedLinkLabelFromPasteBoardV1" = "הקישור הועתק מהלוח";
+
 /* Quick Actions drop down menu item for lear Private Tabs when widget enters edit mode and drop down menu expands */
 "TodayWidget.DropDownMenuItemClearPrivateTabs" = "ניקוי לשוניות פרטיות";
 
@@ -70,8 +73,14 @@
 /* Quick Actions left label text for dropdown menu when widget enters edit mode */
 "TodayWidget.QuickActionDropDownMenu" = "פעולה מהירה";
 
+/* Description for small size widget to add it to home screen */
+"TodayWidget.QuickActionGalleryDescription" = "ניתן להוסיף קיצור דרך ל־Firefox למסך הבית שלך. לאחר הוספת הווידג’ט, יש ללחוץ ולהחזיק כדי לערוך אותו לבחור בקיצור דרך שונה.";
+
 /* Quick Actions title when widget enters edit mode */
 "TodayWidget.QuickActionsGalleryTitle" = "פעולות מהירות";
+
+/* Firefox shortcuts title when widget enters edit mode. Do not translate the word Firefox. */
+"TodayWidget.QuickActionsGalleryTitleV2" = "קיצורי דרך של Firefox";
 
 /* Sub label for medium size quick action widget */
 "TodayWidget.QuickActionsSubLabel" = "‏Firefox - פעולות מהירות";
@@ -81,6 +90,9 @@
 
 /* Description for Quick View widget in Gallery View where user can add it to home screen */
 "TodayWidget.QuickViewGalleryDescriptionV2" = "הוספת קיצורי דרך ללשוניות הפתוחות שלך.";
+
+/* Title for Quick View widget in Gallery View where user can add it to home screen */
+"TodayWidget.QuickViewGalleryTitle" = "תצוגה מהירה";
 
 /* Description for Quick View widget in Gallery View where user can add it to home screen */
 "TodayWidget.QuickViewLargeGalleryDescription" = "הוספת קיצורי דרך ללשוניות הפתוחות שלך.";
@@ -103,8 +115,14 @@
 /* Title for top sites widget to add Firefox top sites shotcuts to home screen */
 "TodayWidget.TopSitesGalleryTitle" = "אתרים מובילים";
 
+/* Title for top sites widget to add Firefox top sites shotcuts to home screen */
+"TodayWidget.TopSitesGalleryTitleV2" = "קיצורי דרך לאתרים";
+
 /* Sub label for Top Sites widget */
 "TodayWidget.TopSitesSubLabel" = "‏Firefox - אתרים מובילים";
+
+/* Sub label for Shortcuts widget */
+"TodayWidget.TopSitesSubLabel2" = "‏Firefox - קיצורי דרך לאתרים";
 
 /* View More for Quick View widget in Gallery View where we don't know how many tabs might be opened */
 "TodayWidget.ViewMore" = "הצגת עוד";

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import WebKit
 import Account
@@ -8,6 +8,7 @@ import Shared
 
 enum DismissType {
     case dismiss
+    case popToTabTray
     case popToRootVC
 }
 
@@ -21,7 +22,8 @@ class FxAWebViewController: UIViewController, WKNavigationDelegate {
     /// Used to show a second WKWebView to browse help links.
     fileprivate var helpBrowser: WKWebView?
     fileprivate let viewModel: FxAWebViewModel
-
+    /// Closure for dismissing higher up FxA Sign in view controller
+    var shouldDismissFxASignInViewController: (() -> Void)?
     /**
      init() FxAWebView.
 
@@ -84,6 +86,8 @@ class FxAWebViewController: UIViewController, WKNavigationDelegate {
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         if dismissType == .dismiss {
             super.dismiss(animated: animated, completion: completion)
+        } else if dismissType == .popToTabTray {
+            shouldDismissFxASignInViewController?()
         } else {
             navigationController?.popToRootViewController(animated: true)
             completion?()
@@ -131,7 +135,7 @@ extension FxAWebViewController: WKUIDelegate {
         helpBrowser = wv
         helpBrowser?.navigationDelegate = self
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.BackTitle, style: .plain, target: self, action: #selector(closeHelpBrowser))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: AccessibilityIdentifiers.GeneralizedIdentifiers.back, style: .plain, target: self, action: #selector(closeHelpBrowser)) 
 
         return helpBrowser
     }

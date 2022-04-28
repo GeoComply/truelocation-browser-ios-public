@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
-import OnePasswordExtension
+import MobileCoreServices
 
 private let log = Logger.browserLogger
 
@@ -31,7 +31,8 @@ class ShareExtensionHelper: NSObject {
         printInfo.outputType = .general
         activityItems.append(printInfo)
 
-        if let tab = selectedTab {
+        // when tab is not loaded (webView != nil) don't show print activity
+        if let tab = selectedTab, tab.webView != nil {
             activityItems.append(TabPrintPageRenderer(tab: tab))
         }
 
@@ -40,7 +41,12 @@ class ShareExtensionHelper: NSObject {
         }
         activityItems.append(self)
 
-        let activityViewController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        var activityViewController: UIActivityViewController
+        if isFile(url: url) {
+            activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        } else {
+            activityViewController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        }
 
         // Hide 'Add to Reading List' which currently uses Safari.
         // We would also hide View Later, if possible, but the exclusion list doesn't currently support
@@ -52,7 +58,9 @@ class ShareExtensionHelper: NSObject {
         // This needs to be ready by the time the share menu has been displayed and
         // activityViewController(activityViewController:, activityType:) is called,
         // which is after the user taps the button. So a million cycles away.
-        findLoginExtensionItem()
+        guard (selectedTab?.webView) != nil else {
+            return activityViewController
+        }
 
         activityViewController.completionWithItemsHandler = { activityType, completed, returnedItems, activityError in
             if !completed {
@@ -65,14 +73,9 @@ class ShareExtensionHelper: NSObject {
                 UIPasteboard.general.urls = [url]
             }
 
-            if self.isPasswordManager(activityType: activityType) {
-                if let logins = returnedItems {
-                    self.fillPasswords(logins as [AnyObject])
-                }
-            }
-
             completionHandler(completed, activityType)
         }
+        
         return activityViewController
     }
 }
@@ -121,36 +124,5 @@ extension ShareExtensionHelper: UIActivityItemSource {
     private func isOpenByCopy(activityType: UIActivity.ActivityType?) -> Bool {
         guard let activityType = activityType?.rawValue else { return false }
         return activityType.lowercased().range(of: "remoteopeninapplication-bycopy") != nil
-    }
-}
-
-private extension ShareExtensionHelper {
-    func findLoginExtensionItem() {
-        guard let selectedWebView = selectedTab?.webView else {
-            return
-        }
-
-        // Add 1Password to share sheet
-        OnePasswordExtension.shared().createExtensionItem(forWebView: selectedWebView, completion: {(extensionItem, error) -> Void in
-            if extensionItem == nil {
-                log.error("Failed to create the password manager extension item: \(error.debugDescription).")
-                return
-            }
-
-            // Set the 1Password extension item property
-            self.onePasswordExtensionItem = extensionItem
-        })
-    }
-
-    func fillPasswords(_ returnedItems: [AnyObject]) {
-        guard let selectedWebView = selectedTab?.webView else {
-            return
-        }
-
-        OnePasswordExtension.shared().fillReturnedItems(returnedItems, intoWebView: selectedWebView, completion: { (success, returnedItemsError) -> Void in
-            if !success {
-                log.error("Failed to fill item into webview: \(returnedItemsError ??? "nil").")
-            }
-        })
     }
 }
