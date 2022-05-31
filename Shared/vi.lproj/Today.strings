@@ -113,13 +113,19 @@
 "TodayWidget.SearchInPrivateTabLabelV2" = "Tìm kiếm trong thẻ riêng tư";
 
 /* Description for top sites widget to add Firefox top sites shotcuts to home screen */
-"TodayWidget.TopSitesGalleryDescription" = "Thêm phím tắt cho các trang web thường xuyên và truy cập gần đây.";
+"TodayWidget.TopSitesGalleryDescription" = "Thêm phím tắt cho các trang web thường xuyên và đã xem gần đây.";
 
 /* Title for top sites widget to add Firefox top sites shotcuts to home screen */
 "TodayWidget.TopSitesGalleryTitle" = "Trang web hàng đầu";
 
+/* Title for top sites widget to add Firefox top sites shotcuts to home screen */
+"TodayWidget.TopSitesGalleryTitleV2" = "Lối tắt trên trang web";
+
 /* Sub label for Top Sites widget */
 "TodayWidget.TopSitesSubLabel" = "Firefox - Trang web hàng đầu";
+
+/* Sub label for Shortcuts widget */
+"TodayWidget.TopSitesSubLabel2" = "Firefox - Lối tắt cho trang web";
 
 /* View More for Quick View widget in Gallery View where we don't know how many tabs might be opened */
 "TodayWidget.ViewMore" = "Xem thêm";

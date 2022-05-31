@@ -1,14 +1,15 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
 import Storage
 
 private struct DownloadsPanelUX {
+    static let WelcomeScreenTopPadding: CGFloat = 120
     static let WelcomeScreenPadding: CGFloat = 15
-    static let WelcomeScreenItemWidth = 170
+    static let WelcomeScreenItemWidth: CGFloat = 170
     static let HeaderHeight: CGFloat = 28
 }
 
@@ -42,10 +43,26 @@ struct DownloadedFile: Equatable {
     }
 }
 
-class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSource, LibraryPanel, UIDocumentInteractionControllerDelegate {
+class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSource, LibraryPanel {
     weak var libraryPanelDelegate: LibraryPanelDelegate?
+    let TwoLineImageOverlayCellIdentifier = "TwoLineImageOverlayCellIdentifier"
+    let SiteTableViewHeaderIdentifier = "SiteTableViewHeaderIdentifier"
     let profile: Profile
-    var tableView = UITableView()
+    lazy var tableView: UITableView = .build { [weak self] tableView in
+        guard let self = self else { return }
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(TwoLineImageOverlayCell.self, forCellReuseIdentifier: self.TwoLineImageOverlayCellIdentifier)
+        tableView.register(SiteTableViewHeader.self, forHeaderFooterViewReuseIdentifier: self.SiteTableViewHeaderIdentifier)
+        tableView.layoutMargins = .zero
+        tableView.keyboardDismissMode = .onDrag
+        tableView.accessibilityIdentifier = "DownloadsTable"
+        tableView.cellLayoutMarginsFollowReadableWidth = false
+
+        // Set an empty footer to prevent empty cells from appearing in the list.
+        tableView.tableFooterView = UIView()
+    }
+    
 
     private let events: [Notification.Name] = [.FileDidDownload, .PrivateDataClearedDownloadedFiles, .DynamicFontChanged]
 
@@ -74,22 +91,13 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
 
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.edges.equalTo(self.view)
-            return
-        }
-
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(TwoLineTableViewCell.self, forCellReuseIdentifier: "TwoLineTableViewCell")
-        tableView.register(SiteTableViewHeader.self, forHeaderFooterViewReuseIdentifier: "SiteTableViewHeader")
-        tableView.layoutMargins = .zero
-        tableView.keyboardDismissMode = .onDrag
-        tableView.accessibilityIdentifier = "DownloadsTable"
-        tableView.cellLayoutMarginsFollowReadableWidth = false
-
-        // Set an empty footer to prevent empty cells from appearing in the list.
-        tableView.tableFooterView = UIView()
+        
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 
     deinit {
@@ -230,9 +238,13 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
             if emptyStateOverlayView.superview == nil {
                 view.addSubview(emptyStateOverlayView)
                 view.bringSubviewToFront(emptyStateOverlayView)
-                emptyStateOverlayView.snp.makeConstraints { make in
-                    make.edges.equalTo(self.tableView)
-                }
+                
+                NSLayoutConstraint.activate([
+                    emptyStateOverlayView.topAnchor.constraint(equalTo: view.topAnchor),
+                    emptyStateOverlayView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    emptyStateOverlayView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    emptyStateOverlayView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
             }
         } else {
             emptyStateOverlayView.removeFromSuperview()
@@ -240,36 +252,36 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
 
     fileprivate func createEmptyStateOverlayView() -> UIView {
-        let overlayView = UIView()
-        overlayView.backgroundColor = UIColor.theme.homePanel.panelBackground
+        let overlayView: UIView = .build { view in
+            view.backgroundColor = UIColor.theme.homePanel.panelBackground
+            view.translatesAutoresizingMaskIntoConstraints = false
+        }
+        let logoImageView: UIImageView = .build { imageView in
+            imageView.image = UIImage.templateImageNamed("emptyDownloads")
+            imageView.tintColor = UIColor.Photon.Grey60
+        }
+        let welcomeLabel: UILabel = .build { label in
+            label.text = .DownloadsPanelEmptyStateTitle
+            label.textAlignment = .center
+            label.font = DynamicFontHelper.defaultHelper.DeviceFontLight
+            label.textColor = UIColor.theme.homePanel.welcomeScreenText
+            label.numberOfLines = 0
+            label.adjustsFontSizeToFitWidth = true
+        }
 
-        let logoImageView = UIImageView(image: UIImage.templateImageNamed("emptyDownloads"))
-        logoImageView.tintColor = UIColor.Photon.Grey60
         overlayView.addSubview(logoImageView)
-        logoImageView.snp.makeConstraints { make in
-            make.centerX.equalTo(overlayView)
-            make.size.equalTo(60)
-            // Sets proper top constraint for iPhone 6 in portait and for iPad.
-            make.centerY.equalTo(overlayView).offset(LibraryPanelUX.EmptyTabContentOffset).priority(100)
-
-            // Sets proper top constraint for iPhone 4, 5 in portrait.
-            make.top.greaterThanOrEqualTo(overlayView).offset(50)
-        }
-
-        let welcomeLabel = UILabel()
         overlayView.addSubview(welcomeLabel)
-        welcomeLabel.text = Strings.DownloadsPanelEmptyStateTitle
-        welcomeLabel.textAlignment = .center
-        welcomeLabel.font = DynamicFontHelper.defaultHelper.DeviceFontLight
-        welcomeLabel.textColor = UIColor.theme.homePanel.welcomeScreenText
-        welcomeLabel.numberOfLines = 0
-        welcomeLabel.adjustsFontSizeToFitWidth = true
-
-        welcomeLabel.snp.makeConstraints { make in
-            make.centerX.equalTo(overlayView)
-            make.top.equalTo(logoImageView.snp.bottom).offset(DownloadsPanelUX.WelcomeScreenPadding)
-            make.width.equalTo(DownloadsPanelUX.WelcomeScreenItemWidth)
-        }
+        
+        NSLayoutConstraint.activate([
+            logoImageView.topAnchor.constraint(equalTo: overlayView.topAnchor, constant: DownloadsPanelUX.WelcomeScreenTopPadding),
+            logoImageView.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
+            logoImageView.heightAnchor.constraint(equalToConstant: 60),
+            logoImageView.widthAnchor.constraint(equalToConstant: 60),
+            
+            welcomeLabel.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
+            welcomeLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: DownloadsPanelUX.WelcomeScreenPadding),
+            welcomeLabel.widthAnchor.constraint(equalToConstant: DownloadsPanelUX.WelcomeScreenItemWidth)
+        ])
 
         return overlayView
     }
@@ -280,7 +292,7 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     // MARK: - TableView Delegate / DataSource
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TwoLineTableViewCell", for: indexPath) as! TwoLineTableViewCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: TwoLineImageOverlayCellIdentifier, for: indexPath) as! TwoLineImageOverlayCell
 
         return configureDownloadedFile(cell, for: indexPath)
     }
@@ -288,7 +300,7 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.textLabel?.textColor = UIColor.theme.tableView.headerTextDark
-            header.contentView.backgroundColor = UIColor.theme.tableView.headerBackground
+            header.contentView.backgroundColor = UIColor.theme.tableView.selectedBackground //UIColor.theme.tableView.headerBackground
         }
     }
 
@@ -301,17 +313,17 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard groupedDownloadedFiles.numberOfItemsForSection(section) > 0 else { return nil }
 
-        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: "SiteTableViewHeader") as? SiteTableViewHeader
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: SiteTableViewHeaderIdentifier) as? SiteTableViewHeader
 
         switch section {
         case 0:
-            header?.textLabel?.text = Strings.TableDateSectionTitleToday
+            header?.textLabel?.text = .LibraryPanel.Sections.Today
         case 1:
-            header?.textLabel?.text = Strings.TableDateSectionTitleYesterday
+            header?.textLabel?.text = .LibraryPanel.Sections.Yesterday
         case 2:
-            header?.textLabel?.text = Strings.TableDateSectionTitleLastWeek
+            header?.textLabel?.text = .LibraryPanel.Sections.LastWeek
         case 3:
-            header?.textLabel?.text = Strings.TableDateSectionTitleLastMonth
+            header?.textLabel?.text = .LibraryPanel.Sections.LastMonth
         default:
             assertionFailure("Invalid Downloads section \(section)")
         }
@@ -331,9 +343,10 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
 
     func configureDownloadedFile(_ cell: UITableViewCell, for indexPath: IndexPath) -> UITableViewCell {
-        if let downloadedFile = downloadedFileForIndexPath(indexPath), let cell = cell as? TwoLineTableViewCell {
-            cell.setLines(downloadedFile.filename, detailText: downloadedFile.formattedSize)
-            cell.imageView?.image = iconForFileExtension(downloadedFile.fileExtension)
+        if let downloadedFile = downloadedFileForIndexPath(indexPath), let cell = cell as? TwoLineImageOverlayCell {
+            cell.titleLabel.text = downloadedFile.filename
+            cell.descriptionLabel.text = downloadedFile.formattedSize
+            cell.leftImageView.image = iconForFileExtension(downloadedFile.fileExtension)
         }
         return cell
     }
@@ -367,48 +380,56 @@ class DownloadsPanel: UIViewController, UITableViewDelegate, UITableViewDataSour
         return groupedDownloadedFiles.numberOfItemsForSection(section)
     }
 
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        // Intentionally blank. Required to use UITableViewRowActions
-    }
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = UIContextualAction(style: .destructive, title: .DownloadsPanelDeleteTitle) { [weak self] (_, _, completion) in
+            guard let strongSelf = self else { completion(false); return }
 
-    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-        let deleteTitle = Strings.DownloadsPanelDeleteTitle
-        let shareTitle = Strings.DownloadsPanelShareTitle
-        let delete = UITableViewRowAction(style: .destructive, title: deleteTitle, handler: { (action, indexPath) in
-            if let downloadedFile = self.downloadedFileForIndexPath(indexPath) {
-                if self.deleteDownloadedFile(downloadedFile) {
-                    self.tableView.beginUpdates()
-                    self.groupedDownloadedFiles.remove(downloadedFile)
-                    self.tableView.deleteRows(at: [indexPath], with: .right)
-                    self.tableView.endUpdates()
-                    self.updateEmptyPanelState()
-                    TelemetryWrapper.recordEvent(category: .action, method: .delete, object: .download, value: .downloadsPanel)
-                }
+            if let downloadedFile = strongSelf.downloadedFileForIndexPath(indexPath),
+               strongSelf.deleteDownloadedFile(downloadedFile) {
+                strongSelf.tableView.beginUpdates()
+                strongSelf.groupedDownloadedFiles.remove(downloadedFile)
+                strongSelf.tableView.deleteRows(at: [indexPath], with: .right)
+                strongSelf.tableView.endUpdates()
+                strongSelf.updateEmptyPanelState()
+                TelemetryWrapper.recordEvent(category: .action, method: .delete, object: .download, value: .downloadsPanel)
+                completion(true)
+            } else {
+                completion(false)
             }
-        })
-        let share = UITableViewRowAction(style: .normal, title: shareTitle, handler: { (action, indexPath) in
-            if let downloadedFile = self.downloadedFileForIndexPath(indexPath) {
-                self.shareDownloadedFile(downloadedFile, indexPath: indexPath)
+        }
+
+        let shareAction = UIContextualAction(style: .normal, title: .DownloadsPanelShareTitle) { [weak self] (_, view, completion) in
+            guard let strongSelf = self else { completion(false); return }
+
+            view.backgroundColor = strongSelf.view.tintColor
+            if let downloadedFile = strongSelf.downloadedFileForIndexPath(indexPath) {
+                strongSelf.shareDownloadedFile(downloadedFile, indexPath: indexPath)
                 TelemetryWrapper.recordEvent(category: .action, method: .share, object: .download, value: .downloadsPanel)
+                completion(true)
+            } else {
+                completion(false)
             }
-        })
-        share.backgroundColor = view.tintColor
-        return [delete, share]
-    }
-    // MARK: - UIDocumentInteractionControllerDelegate
+        }
 
+        return UISwipeActionsConfiguration(actions: [deleteAction, shareAction])
+    }
+}
+
+// MARK: - UIDocumentInteractionControllerDelegate
+extension DownloadsPanel: UIDocumentInteractionControllerDelegate {
     func documentInteractionControllerViewControllerForPreview(_ controller: UIDocumentInteractionController) -> UIViewController {
         return self
     }
 }
 
-extension DownloadsPanel: Themeable {
+// MARK: - NotificationThemeable
+extension DownloadsPanel: NotificationThemeable {
     func applyTheme() {
         emptyStateOverlayView.removeFromSuperview()
         emptyStateOverlayView = createEmptyStateOverlayView()
         updateEmptyPanelState()
 
-        tableView.backgroundColor = UIColor.theme.tableView.rowBackground
+        tableView.backgroundColor =  UIColor.theme.homePanel.panelBackground
         tableView.separatorColor = UIColor.theme.tableView.separator
 
         reloadData()

@@ -26,7 +26,7 @@
 "Intro.Slides.Firefox.Account.Sync.Title" = "Συγχρονισμός του Firefox μεταξύ συσκευών";
 
 /* Description for the 'Mail' panel in the First Run tour. */
-"Intro.Slides.Mail.Description" = "Χρησιμοποιήστε οποιαδήποτε εφαρμογή e-mail - όχι μόνο το Mail - με το Firefox.";
+"Intro.Slides.Mail.Description" = "Χρησιμοποιήστε οποιαδήποτε εφαρμογή email - όχι μόνο το Mail - με το Firefox.";
 
 /* Title for the fourth panel 'Mail' in the First Run tour. */
 "Intro.Slides.Mail.Title" = "Έχετε επιλογές… αλληλογραφίας";
@@ -35,7 +35,7 @@
 "Intro.Slides.Private.Description" = "Πατήστε το εικονίδιο-μάσκα για μετάβαση στη λειτουργία ιδιωτικής περιήγησης.";
 
 /* Title for the third panel 'Private Browsing' in the First Run tour. */
-"Intro.Slides.Private.Title" = "Περιηγηθείτε σαν να μην σάς βλέπει κανείς";
+"Intro.Slides.Private.Title" = "Περιηγηθείτε σαν να μην σας βλέπει κανείς";
 
 /* Description for the third item in the table related to safe syncing with a firefox account */
 "Intro.Slides.Safe.Sync.Description" = "Προστατέψτε τις συνδέσεις και τα δεδομένα σας όπου κι αν χρησιμοποιήσετε το Firefox.";

@@ -1,44 +1,39 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
 import SnapKit
 import UIKit
 
-class TabMoreMenuViewController: UIViewController, Themeable {
+class TabMoreMenuViewController: UIViewController, NotificationThemeable {
     weak var delegate: TabTrayDelegate?
-    var tabTrayV2Delegate: TabTrayV2Delegate?
+    var chronTabsTrayDelegate: ChronologicalTabsDelegate?
     var bottomSheetDelegate: BottomSheetDelegate?
     weak var tab: Tab?
     lazy var viewModel = TabMoreMenuViewModel(viewController: self, profile: profile)
     let profile: Profile
     let tabIndex: IndexPath
 
-    let titles: [Int: [String]] = [ 1: [Strings.ShareAddToReadingList,
-                                        Strings.BookmarkContextMenuTitle,
-                                        Strings.PinTopsiteActionTitle],
-                                    2: [Strings.CloseTabTitle],
-                                    0: [Strings.CopyAddressTitle,
-                                        Strings.ShareContextMenuTitle,
-                                        Strings.SendToDeviceTitle]
+    let titles: [Int: [String]] = [ 1: [.ShareAddToReadingList,
+                                        .BookmarkContextMenuTitle,
+                                        .AddToShortcutsActionTitle],
+                                    2: [.KeyboardShortcuts.CloseCurrentTab],
+                                    0: [.CopyAddressTitle,
+                                        .ShareContextMenuTitle,
+                                        .SendToDeviceTitle]
     ]
-    let imageViews: [Int: [UIImageView]] = [ 1: [UIImageView(image: UIImage.templateImageNamed("panelIconReadingList")),
-                                                 UIImageView(image: UIImage.templateImageNamed("panelIconBookmarks")),
-                                                 UIImageView(image: UIImage.templateImageNamed("action_pin"))],
+    let imageViews: [Int: [UIImageView]] = [ 1: [UIImageView(image: UIImage.templateImageNamed("library-readinglist")),
+                                                 UIImageView(image: UIImage.templateImageNamed("bookmark")),
+                                                 UIImageView(image: UIImage.templateImageNamed(ImageIdentifiers.addShortcut))],
                                              2: [UIImageView(image: UIImage.templateImageNamed("menu-CloseTabs"))],
-                                             0: [UIImageView(image: UIImage.templateImageNamed("menu-Copy-Link")),
+                                             0: [UIImageView(image: UIImage.templateImageNamed(ImageIdentifiers.copyLink)),
                                                  UIImageView(image: UIImage.templateImageNamed("menu-Send")),
-                                                 UIImageView(image: UIImage.templateImageNamed("menu-Send-to-Device"))]
+                                                 UIImageView(image: UIImage.templateImageNamed(ImageIdentifiers.sendToDevice))]
     ]
     lazy var tableView: UITableView = {
-        var tableView: UITableView
-        if #available(iOS 13.0, *) {
-            tableView = UITableView(frame: CGRect(), style: .insetGrouped)
-        } else {
-            tableView = UITableView()
-        }
+        var tableView = UITableView(frame: CGRect(), style: .insetGrouped)
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "moreMenuCell")
         tableView.register(ThemedTableSectionHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: "moreMenuHeader")
         tableView.dataSource = self
@@ -68,10 +63,10 @@ class TabMoreMenuViewController: UIViewController, Themeable {
     }()
     
     func applyTheme() {
-        if ThemeManager.instance.currentName == .normal {
-            tabMoreMenuHeader.backgroundColor = UIColor(rgb: 0xF2F2F7)
+        if LegacyThemeManager.instance.currentName == .normal {
+            tabMoreMenuHeader.backgroundColor = UIColor.Photon.Grey10
         } else {
-            tabMoreMenuHeader.backgroundColor = UIColor(rgb: 0x1C1C1E)
+            tabMoreMenuHeader.backgroundColor = UIColor.Photon.Grey90
         }
     }
     
@@ -144,7 +139,7 @@ class TabMoreMenuViewController: UIViewController, Themeable {
         headerView.descriptionLabel.text = baseDomain != nil ? baseDomain!.contains("local") ? " " : baseDomain : " "
         headerView.titleLabel.text = tab.displayTitle
         headerView.imageView.image = tab.screenshot ?? UIImage()
-        headerView.backgroundColor = UIColor(rgb: 0xF2F2F7)
+        headerView.backgroundColor = UIColor.Photon.Grey10
     }
     
     func dismissMenu() {
@@ -170,7 +165,7 @@ extension TabMoreMenuViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "moreMenuCell", for: indexPath)
         let lightColor = UIColor.theme.tableView.rowBackground
         let darkColor = UIColor.Photon.Grey80
-        cell.backgroundColor = ThemeManager.instance.currentName == .normal ? lightColor : darkColor
+        cell.backgroundColor = LegacyThemeManager.instance.currentName == .normal ? lightColor : darkColor
         cell.textLabel?.text = titles[indexPath.section]?[indexPath.row]
         cell.accessoryView = imageViews[indexPath.section]?[indexPath.row]
         cell.accessoryView?.tintColor = UIColor.theme.textField.textAndTint
@@ -189,11 +184,7 @@ extension TabMoreMenuViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        if #available(iOS 13.0, *) {
-            return 0
-        } else {
-            return 8
-        }
+        return 0
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -204,14 +195,14 @@ extension TabMoreMenuViewController: UITableViewDelegate {
             switch indexPath.row {
             case 0:
                 UIPasteboard.general.url = url
-                SimpleToast().showAlertWithText(Strings.AppMenuCopyURLConfirmMessage, bottomContainer: self.view)
+                SimpleToast().showAlertWithText(.AppMenuCopyURLConfirmMessage, bottomContainer: self.view)
                 dismissMenu()
             case 1:
                 dismissMenu()
                 self.presentActivityViewController(url, tab: tab)
             case 2:
                 dismissMenu()
-                tabTrayV2Delegate?.closeTabTray()
+                chronTabsTrayDelegate?.closeTabTray()
                 viewModel.sendToDevice()
             default:
                 return
@@ -231,7 +222,7 @@ extension TabMoreMenuViewController: UITableViewDelegate {
                 return
             }
         case 2:
-            tabTrayV2Delegate?.closeTab(forIndex: tabIndex)
+            chronTabsTrayDelegate?.closeTab(forIndex: tabIndex)
             dismissMenu()
         default:
             return

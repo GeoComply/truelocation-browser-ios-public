@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -10,6 +10,7 @@ import Foundation
     @objc optional func menuHelperReveal()
     @objc optional func menuHelperSecure()
     @objc optional func menuHelperFindInPage()
+    // GG Overriden
     @objc optional func menuHelperSearchWithBrowser()
     @objc optional func menuHelperPasteAndGo()
 }

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -8,7 +8,7 @@ import Shared
 class TrayToBrowserAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         if let bvc = transitionContext.viewController(forKey: .to) as? BrowserViewController,
-           let tabTray = transitionContext.viewController(forKey: .from) as? TabTrayControllerV1 {
+           let tabTray = transitionContext.viewController(forKey: .from) as? GridTabViewController {
             transitionFromTray(tabTray, toBrowser: bvc, usingContext: transitionContext)
         }
     }
@@ -19,7 +19,7 @@ class TrayToBrowserAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 }
 
 private extension TrayToBrowserAnimator {
-    func transitionFromTray(_ tabTray: TabTrayControllerV1, toBrowser bvc: BrowserViewController, usingContext transitionContext: UIViewControllerContextTransitioning) {
+    func transitionFromTray(_ tabTray: GridTabViewController, toBrowser bvc: BrowserViewController, usingContext transitionContext: UIViewControllerContextTransitioning) {
         let container = transitionContext.containerView
         guard let selectedTab = bvc.tabManager.selectedTab else { return }
 
@@ -27,13 +27,10 @@ private extension TrayToBrowserAnimator {
         let displayedTabs = selectedTab.isPrivate ? tabManager.privateTabs : tabManager.normalTabs
         guard let expandFromIndex = displayedTabs.firstIndex(of: selectedTab) else { return }
 
-        //Disable toolbar until animation completes
-        tabTray.toolbar.isUserInteractionEnabled = false
-
         bvc.view.frame = transitionContext.finalFrame(for: bvc)
 
         // Hide browser components
-        bvc.toggleSnackBarVisibility(show: false)
+        bvc.bottomContentStackView.toggleStackViewVisibility(show: false)
         toggleWebViewVisibility(false, usingTabManager: bvc.tabManager)
         bvc.firefoxHomeViewController?.view.isHidden = true
 
@@ -61,11 +58,11 @@ private extension TrayToBrowserAnimator {
         container.layoutIfNeeded()
 
         let finalFrame = calculateExpandedCellFrameFromBVC(bvc)
-        bvc.footer.alpha = shouldDisplayFooterForBVC(bvc) ? 1 : 0
+        bvc.toolbar.isHidden = !shouldDisplayToolbarForBVC(bvc)
         bvc.urlBar.isTransitioning = true
 
         // Re-calculate the starting transforms for header/footer views in case we switch orientation
-        resetTransformsForViews([bvc.header, bvc.readerModeBar, bvc.footer])
+        resetTransformsForViews([bvc.header, bvc.readerModeBar, bvc.overKeyboardContainer])
         transformHeaderFooterForBVC(bvc, toFrame: startingFrame, container: container)
         
         let frameResizeClosure = {
@@ -74,7 +71,6 @@ private extension TrayToBrowserAnimator {
             container.layoutIfNeeded()
             cell.title.transform = CGAffineTransform(translationX: 0, y: -cell.title.frame.height)
             bvc.tabTrayDidDismiss(tabTray)
-            tabTray.toolbar.transform = CGAffineTransform(translationX: 0, y: UIConstants.BottomToolbarHeight)
             tabCollectionViewSnapshot.transform = CGAffineTransform(scaleX: 0.9, y: 0.9) 
         }
 
@@ -93,19 +89,16 @@ private extension TrayToBrowserAnimator {
             UIApplication.shared.windows.first?.backgroundColor = UIColor.theme.browser.background
             tabTray.navigationController?.setNeedsStatusBarAppearanceUpdate()
             tabCollectionViewSnapshot.alpha = 0
-            tabTray.statusBarBG.alpha = 0
-            tabTray.searchBarHolder.alpha = 0
         }, completion: { finished in
             // Remove any of the views we used for the animation
             cell.removeFromSuperview()
             tabCollectionViewSnapshot.removeFromSuperview()
-            bvc.footer.alpha = 1
-            bvc.toggleSnackBarVisibility(show: true)
+            bvc.toolbar.isHidden = false
+            bvc.bottomContentStackView.toggleStackViewVisibility(show: true)
             toggleWebViewVisibility(true, usingTabManager: bvc.tabManager)
             bvc.webViewContainerBackdrop.isHidden = false
             bvc.firefoxHomeViewController?.view.isHidden = false
             bvc.urlBar.isTransitioning = false
-            tabTray.toolbar.isUserInteractionEnabled = true
             transitionContext.completeTransition(true)
         })
     }
@@ -114,7 +107,7 @@ private extension TrayToBrowserAnimator {
 class BrowserToTrayAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         if let bvc = transitionContext.viewController(forKey: .from) as? BrowserViewController,
-           let tabTray = transitionContext.viewController(forKey: .to) as? TabTrayControllerV1 {
+           let tabTray = transitionContext.viewController(forKey: .to) as? GridTabViewController {
             transitionFromBrowser(bvc, toTabTray: tabTray, usingContext: transitionContext)
         }
     }
@@ -125,7 +118,7 @@ class BrowserToTrayAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 }
 
 private extension BrowserToTrayAnimator {
-    func transitionFromBrowser(_ bvc: BrowserViewController, toTabTray tabTray: TabTrayControllerV1, usingContext transitionContext: UIViewControllerContextTransitioning) {
+    func transitionFromBrowser(_ bvc: BrowserViewController, toTabTray tabTray: GridTabViewController, usingContext transitionContext: UIViewControllerContextTransitioning) {
 
         let container = transitionContext.containerView
         guard let selectedTab = bvc.tabManager.selectedTab else { return }
@@ -134,9 +127,6 @@ private extension BrowserToTrayAnimator {
         let displayedTabs = selectedTab.isPrivate ? tabManager.privateTabs : tabManager.normalTabs
         guard let scrollToIndex = displayedTabs.firstIndex(of: selectedTab) else { return }
 
-        //Disable toolbar until animation completes
-        tabTray.toolbar.isUserInteractionEnabled = false
-
         tabTray.view.frame = transitionContext.finalFrame(for: tabTray)
 
         // Insert tab tray below the browser and force a layout so the collection view can get it's frame right
@@ -144,19 +134,18 @@ private extension BrowserToTrayAnimator {
 
         // Force subview layout on the collection view so we can calculate the correct end frame for the animation
         tabTray.view.layoutIfNeeded()
-        tabTray.focusTab()
+        tabTray.focusItem()
 
         // Build a tab cell that we will use to animate the scaling of the browser to the tab
         let expandedFrame = calculateExpandedCellFrameFromBVC(bvc)
         let cell = createTransitionCellFromTab(bvc.tabManager.selectedTab, withFrame: expandedFrame)
-        cell.backgroundHolder.layer.cornerRadius = TabTrayControllerUX.CornerRadius
+        cell.backgroundHolder.layer.cornerRadius = GridTabTrayControllerUX.CornerRadius
 
         // Take a snapshot of the collection view to perform the scaling/alpha effect
         let tabCollectionViewSnapshot = tabTray.collectionView.snapshotView(afterScreenUpdates: true)!
         tabCollectionViewSnapshot.frame = tabTray.collectionView.frame
         tabCollectionViewSnapshot.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
         tabCollectionViewSnapshot.alpha = 0
-        tabTray.view.insertSubview(tabCollectionViewSnapshot, belowSubview: tabTray.toolbar)
 
         if let toast = bvc.clipboardBarDisplayHandler?.clipboardToast {
             toast.removeFromSuperview()
@@ -169,16 +158,9 @@ private extension BrowserToTrayAnimator {
         // Hide views we don't want to show during the animation in the BVC
         bvc.firefoxHomeViewController?.view.isHidden = true
         bvc.statusBarOverlay.isHidden = true
-        bvc.toggleSnackBarVisibility(show: false)
+        bvc.bottomContentStackView.toggleStackViewVisibility(show: false)
         toggleWebViewVisibility(false, usingTabManager: bvc.tabManager)
         bvc.urlBar.isTransitioning = true
-
-        // On iPhone, fading these in produces a darkening at the top of the screen, and then
-        // it brightens back to full white as they fade in. Setting these to not fade in produces a better effect.
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            tabTray.statusBarBG.alpha = 1
-            tabTray.searchBarHolder.alpha = 1
-        }
 
         // Since we are hiding the collection view and the snapshot API takes the snapshot after the next screen update,
         // the screenshot ends up being blank unless we set the collection view hidden after the screen update happens.
@@ -188,7 +170,6 @@ private extension BrowserToTrayAnimator {
             tabTray.collectionView.isHidden = true
             let finalFrame = calculateCollapsedCellFrameUsingCollectionView(tabTray.collectionView,
                 atIndex: scrollToIndex)
-            tabTray.toolbar.transform = CGAffineTransform(translationX: 0, y: UIConstants.BottomToolbarHeight)
             
             let frameResizeClosure = {
                 cell.frame = finalFrame
@@ -212,12 +193,8 @@ private extension BrowserToTrayAnimator {
                 tabTray.navigationController?.setNeedsStatusBarAppearanceUpdate()
 
                 bvc.urlBar.updateAlphaForSubviews(0)
-                bvc.footer.alpha = 0
+                bvc.toolbar.isHidden = true
                 tabCollectionViewSnapshot.alpha = 1
-
-                tabTray.statusBarBG.alpha = 1
-                tabTray.searchBarHolder.alpha = 1
-                tabTray.toolbar.transform = .identity
                 
                 if !UIAccessibility.isReduceMotionEnabled {
                     frameResizeClosure()
@@ -229,13 +206,12 @@ private extension BrowserToTrayAnimator {
                 tabCollectionViewSnapshot.removeFromSuperview()
                 tabTray.collectionView.isHidden = false
 
-                bvc.toggleSnackBarVisibility(show: true)
+                bvc.bottomContentStackView.toggleStackViewVisibility(show: true)
                 toggleWebViewVisibility(true, usingTabManager: bvc.tabManager)
                 bvc.firefoxHomeViewController?.view.isHidden = false
 
-                resetTransformsForViews([bvc.header, bvc.readerModeBar, bvc.footer])
+                resetTransformsForViews([bvc.header, bvc.readerModeBar, bvc.overKeyboardContainer])
                 bvc.urlBar.isTransitioning = false
-                tabTray.toolbar.isUserInteractionEnabled = true
                 transitionContext.completeTransition(true)
             })
         }
@@ -243,10 +219,10 @@ private extension BrowserToTrayAnimator {
 }
 
 private func transformHeaderFooterForBVC(_ bvc: BrowserViewController, toFrame finalFrame: CGRect, container: UIView) {
-    let footerForTransform = footerTransform(bvc.footer.frame, toFrame: finalFrame, container: container)
+    let footerForTransform = footerTransform(bvc.overKeyboardContainer.frame, toFrame: finalFrame, container: container)
     let headerForTransform = headerTransform(bvc.header.frame, toFrame: finalFrame, container: container)
 
-    bvc.footer.transform = footerForTransform
+    bvc.overKeyboardContainer.transform = footerForTransform
     bvc.header.transform = headerForTransform
     bvc.readerModeBar?.transform = headerForTransform
 }
@@ -296,21 +272,21 @@ private func calculateExpandedCellFrameFromBVC(_ bvc: BrowserViewController) -> 
 
     // If we're navigating to a home panel and we were expecting to show the toolbar, add more height to end frame since
     // there is no toolbar for home panels
-    if !bvc.shouldShowFooterForTraitCollection(bvc.traitCollection) {
+    if !bvc.shouldShowToolbarForTraitCollection(bvc.traitCollection) {
         return frame
     }
 
-    if let url = bvc.tabManager.selectedTab?.url, bvc.toolbar == nil, let internalPage = InternalURL(url), internalPage.isAboutURL {
+    if let url = bvc.tabManager.selectedTab?.url, bvc.toolbar.isHidden, let internalPage = InternalURL(url), internalPage.isAboutURL {
         frame.size.height += UIConstants.BottomToolbarHeight
     }
 
     return frame
 }
 
-private func shouldDisplayFooterForBVC(_ bvc: BrowserViewController) -> Bool {
+private func shouldDisplayToolbarForBVC(_ bvc: BrowserViewController) -> Bool {
     guard let url = bvc.tabManager.selectedTab?.url else { return false }
     let isAboutPage = InternalURL(url)?.isAboutURL ?? false
-    return bvc.shouldShowFooterForTraitCollection(bvc.traitCollection) && !isAboutPage
+    return bvc.shouldShowToolbarForTraitCollection(bvc.traitCollection) && !isAboutPage
 }
 
 private func toggleWebViewVisibility(_ show: Bool, usingTabManager tabManager: TabManager) {

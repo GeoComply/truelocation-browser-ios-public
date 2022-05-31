@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
 import UIKit
@@ -62,10 +62,6 @@ open class DiskImageStore {
     /// Does nothing if this key already exists in the store.
     @discardableResult open func put(_ key: String, image: UIImage) -> Success {
         return deferDispatchAsync(queue) { () -> Success in
-            if self.keys.contains(key) {
-                return deferMaybe(DiskImageStoreErrorType(description: "Key already in store"))
-            }
-
             let imageURL = URL(fileURLWithPath: self.filesDir).appendingPathComponent(key)
             if let data = image.jpegData(compressionQuality: self.quality) {
                 do {
@@ -96,6 +92,21 @@ open class DiskImageStore {
             }
 
             self.keys = self.keys.intersection(keys)
+
+            return succeed()
+        }
+    }
+    
+    /// Remove image with provided key
+    open func removeImage(_ key: String) -> Success {
+        return deferDispatchAsync(queue) { () -> Success in
+            let url = URL(fileURLWithPath: self.filesDir).appendingPathComponent(key)
+
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch {
+                log.warning("Failed to remove DiskImageStore item at \(url.absoluteString): \(error)")
+            }
 
             return succeed()
         }

@@ -1,10 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
-
 @_exported import MozillaAppServices
 
 private let log = Logger.syncLogger
@@ -15,10 +14,10 @@ public class RustPlaces {
     let writerQueue: DispatchQueue
     let readerQueue: DispatchQueue
 
-    var api: PlacesAPI?
+    public var api: PlacesAPI?
 
-    var writer: PlacesWriteConnection?
-    var reader: PlacesReadConnection?
+    public var writer: PlacesWriteConnection?
+    public var reader: PlacesReadConnection?
 
     public fileprivate(set) var isOpen: Bool = false
 
@@ -37,6 +36,18 @@ public class RustPlaces {
             isOpen = true
             return nil
         } catch let err as NSError {
+            /*
+            if let placesError = err as? PlacesError {
+                switch placesError {
+                case .InternalPanic(let message):
+                    Sentry.shared.sendWithStacktrace(message: "Panicked when opening Rust Places database", tag: SentryTag.rustPlaces, severity: .error, description: message)
+                default:
+                    Sentry.shared.sendWithStacktrace(message: "Unspecified or other error when opening Rust Places database", tag: SentryTag.rustPlaces, severity: .error, description: placesError.localizedDescription)
+                }
+            } else {
+                Sentry.shared.sendWithStacktrace(message: "Unknown error when opening Rust Places database", tag: SentryTag.rustPlaces, severity: .error, description: err.localizedDescription)
+            }
+             */
             return err
         }
     }
@@ -54,7 +65,7 @@ public class RustPlaces {
 
         writerQueue.async {
             guard self.isOpen else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
                 return
             }
 
@@ -70,7 +81,7 @@ public class RustPlaces {
                     deferred.fill(Maybe(failure: error as MaybeErrorType))
                 }
             } else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
             }
         }
 
@@ -82,7 +93,7 @@ public class RustPlaces {
 
         readerQueue.async {
             guard self.isOpen else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
                 return
             }
 
@@ -102,7 +113,7 @@ public class RustPlaces {
                     deferred.fill(Maybe(failure: error as MaybeErrorType))
                 }
             } else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
             }
         }
 
@@ -134,23 +145,25 @@ public class RustPlaces {
         do {
             try api?.migrateBookmarksFromBrowserDb(path: browserDB.databasePath)
         } catch let err as NSError {
-           
+            /*
+            Sentry.shared.sendWithStacktrace(message: "Error encountered while migrating bookmarks from BrowserDB", tag: SentryTag.rustPlaces, severity: .error, description: err.localizedDescription)
+             */
         }
     }
 
-    public func getBookmarksTree(rootGUID: GUID, recursive: Bool) -> Deferred<Maybe<BookmarkNode?>> {
+    public func getBookmarksTree(rootGUID: GUID, recursive: Bool) -> Deferred<Maybe<BookmarkNodeData?>> {
         return withReader { connection in
             return try connection.getBookmarksTree(rootGUID: rootGUID, recursive: recursive)
         }
     }
 
-    public func getBookmark(guid: GUID) -> Deferred<Maybe<BookmarkNode?>> {
+    public func getBookmark(guid: GUID) -> Deferred<Maybe<BookmarkNodeData?>> {
         return withReader { connection in
             return try connection.getBookmark(guid: guid)
         }
     }
 
-    public func getRecentBookmarks(limit: UInt) -> Deferred<Maybe<[BookmarkItem]>> {
+    public func getRecentBookmarks(limit: UInt) -> Deferred<Maybe<[BookmarkItemData]>> {
         return withReader { connection in
             return try connection.getRecentBookmarks(limit: limit)
         }
@@ -162,7 +175,7 @@ public class RustPlaces {
         }
     }
 
-    public func getBookmarksWithURL(url: String) -> Deferred<Maybe<[BookmarkItem]>> {
+    public func getBookmarksWithURL(url: String) -> Deferred<Maybe<[BookmarkItemData]>> {
         return withReader { connection in
             return try connection.getBookmarksWithURL(url: url)
         }
@@ -178,7 +191,7 @@ public class RustPlaces {
         }
     }
 
-    public func searchBookmarks(query: String, limit: UInt) -> Deferred<Maybe<[BookmarkItem]>> {
+    public func searchBookmarks(query: String, limit: UInt) -> Deferred<Maybe<[BookmarkItemData]>> {
         return withReader { connection in
             return try connection.searchBookmarks(query: query, limit: limit)
         }
@@ -225,12 +238,14 @@ public class RustPlaces {
             return try connection.createFolder(parentGUID: parentGUID, title: title, position: position)
         }
     }
+    
 
     public func createSeparator(parentGUID: GUID, position: UInt32? = nil) -> Deferred<Maybe<GUID>> {
         return withWriter { connection in
             return try connection.createSeparator(parentGUID: parentGUID, position: position)
         }
     }
+
 
     @discardableResult
     public func createBookmark(parentGUID: GUID, url: String, title: String?, position: UInt32? = nil) -> Deferred<Maybe<GUID>> {
@@ -280,7 +295,7 @@ public class RustPlaces {
 
         writerQueue.async {
             guard self.isOpen else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
                 return
             }
 
@@ -288,7 +303,16 @@ public class RustPlaces {
                 try _ = self.api?.syncBookmarks(unlockInfo: unlockInfo)
                 deferred.fill(Maybe(success: ()))
             } catch let err as NSError {
-
+                /*
+                if let placesError = err as? PlacesError {
+                    switch placesError {
+                    case .InternalPanic(let message):
+                        Sentry.shared.sendWithStacktrace(message: "Panicked when syncing Places database", tag: SentryTag.rustPlaces, severity: .error, description: message)
+                    default:
+                        Sentry.shared.sendWithStacktrace(message: "Unspecified or other error when syncing Places database", tag: SentryTag.rustPlaces, severity: .error, description: placesError.localizedDescription)
+                    }
+                }
+                 */
                 deferred.fill(Maybe(failure: err))
             }
         }
@@ -301,7 +325,7 @@ public class RustPlaces {
 
         writerQueue.async {
             guard self.isOpen else {
-                deferred.fill(Maybe(failure: PlacesError.connUseAfterAPIClosed as MaybeErrorType))
+                deferred.fill(Maybe(failure: PlacesApiError.connUseAfterApiClosed as MaybeErrorType))
                 return
             }
 
@@ -314,5 +338,52 @@ public class RustPlaces {
         }
 
         return deferred
+    }
+
+    public func getHistoryMetadataSince(since: Int64) -> Deferred<Maybe<[HistoryMetadata]>> {
+        return withReader { connection in
+            return try connection.getHistoryMetadataSince(since: since)
+        }
+    }
+
+    public func getHighlights(weights: HistoryHighlightWeights, limit: Int32) -> Deferred<Maybe<[HistoryHighlight]>> {
+        return withReader { connection in
+            return try connection.getHighlights(weights: weights, limit: limit)
+        }
+    }
+
+    public func queryHistoryMetadata(query: String, limit: Int32) -> Deferred<Maybe<[HistoryMetadata]>> {
+        return withReader { connection in
+            return try connection.queryHistoryMetadata(query: query, limit: limit)
+        }
+    }
+    
+    /**
+        Title observations must be made first for any given url. Observe one fact at a time (e.g. just the viewTime, or just the documentType).
+     */
+    public func noteHistoryMetadataObservation(key: HistoryMetadataKey, observation: HistoryMetadataObservation) -> Deferred<Maybe<Void>> {
+        return withWriter { connection in
+            if let title = observation.title {
+                return try connection.noteHistoryMetadataObservationTitle(key: key, title: title)
+            }
+            if let documentType = observation.documentType {
+                return try connection.noteHistoryMetadataObservationDocumentType(key: key, documentType: documentType)
+            }
+            if let viewTime = observation.viewTime {
+                return try connection.noteHistoryMetadataObservationViewTime(key: key, viewTime: viewTime)
+            }
+        }
+    }
+
+    public func deleteHistoryMetadataOlderThan(olderThan: Int64) -> Deferred<Maybe<Void>> {
+        return withWriter { connection in
+            return try connection.deleteHistoryMetadataOlderThan(olderThan: olderThan)
+        }
+    }
+
+    public func deleteHistoryMetadata(key: HistoryMetadataKey) -> Deferred<Maybe<Void>> {
+        return withWriter { connection in
+            return try connection.deleteHistoryMetadata(key: key)
+        }
     }
 }

@@ -77,10 +77,13 @@
 "TodayWidget.QuickActionDropDownMenu" = "Rychlá akce";
 
 /* Description for small size widget to add it to home screen */
-"TodayWidget.QuickActionGalleryDescription" = "Přidejte si zkratku Firefoxu na domovskou obrazovku. Pro úpravu nebo výběr jiné zkratky na widget podržte prst.";
+"TodayWidget.QuickActionGalleryDescription" = "Přidejte si zkratku Firefoxu na domovskou obrazovku. Pro úpravu nebo výběr jiné zkratky na widgetu podržte prst.";
 
 /* Quick Actions title when widget enters edit mode */
 "TodayWidget.QuickActionsGalleryTitle" = "Rychlé akce";
+
+/* Firefox shortcuts title when widget enters edit mode. Do not translate the word Firefox. */
+"TodayWidget.QuickActionsGalleryTitleV2" = "Zkratky Firefoxu";
 
 /* Sub label for medium size quick action widget */
 "TodayWidget.QuickActionsSubLabel" = "Firefox - Rychlé akce";
@@ -115,8 +118,14 @@
 /* Title for top sites widget to add Firefox top sites shotcuts to home screen */
 "TodayWidget.TopSitesGalleryTitle" = "Top stránky";
 
+/* Title for top sites widget to add Firefox top sites shotcuts to home screen */
+"TodayWidget.TopSitesGalleryTitleV2" = "Zkratky webových stránek";
+
 /* Sub label for Top Sites widget */
 "TodayWidget.TopSitesSubLabel" = "Firefox - Top stránky";
+
+/* Sub label for Shortcuts widget */
+"TodayWidget.TopSitesSubLabel2" = "Firefox - zkratky webových stránek";
 
 /* View More for Quick View widget in Gallery View where we don't know how many tabs might be opened */
 "TodayWidget.ViewMore" = "Další";

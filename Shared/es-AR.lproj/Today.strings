@@ -98,7 +98,7 @@
 "TodayWidget.QuickViewGalleryTitle" = "Vista rápida";
 
 /* Description for Quick View widget in Gallery View where user can add it to home screen */
-"TodayWidget.QuickViewLargeGalleryDescription" = "Agrega atajos a las pestañas abiertas.";
+"TodayWidget.QuickViewLargeGalleryDescription" = "Agregar atajos a las pestañas abiertas.";
 
 /* Sub label for Top Sites widget */
 "TodayWidget.QuickViewOpenTabsSubLabel" = "Firefox Pestañas abiertas";
@@ -118,8 +118,14 @@
 /* Title for top sites widget to add Firefox top sites shotcuts to home screen */
 "TodayWidget.TopSitesGalleryTitle" = "Sitios importantes";
 
+/* Title for top sites widget to add Firefox top sites shotcuts to home screen */
+"TodayWidget.TopSitesGalleryTitleV2" = "Atajos de páginas web";
+
 /* Sub label for Top Sites widget */
 "TodayWidget.TopSitesSubLabel" = "Firefox Sitios importantes";
+
+/* Sub label for Shortcuts widget */
+"TodayWidget.TopSitesSubLabel2" = "Firefox - Atajos del sitio web";
 
 /* View More for Quick View widget in Gallery View where we don't know how many tabs might be opened */
 "TodayWidget.ViewMore" = "Ver más";
