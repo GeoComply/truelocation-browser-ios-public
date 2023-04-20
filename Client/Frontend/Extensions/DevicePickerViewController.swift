@@ -1,7 +1,7 @@
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -47,11 +47,11 @@ class DevicePickerViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = Strings.SendToTitle
+        title = .SendToTitle
         refreshControl = UIRefreshControl()
         refreshControl?.addTarget(self, action: #selector(refresh), for: .valueChanged)
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: Strings.SendToCancelButton,
+            title: .SendToCancelButton,
             style: .plain,
             target: self,
             action: #selector(cancel)
@@ -101,13 +101,14 @@ class DevicePickerViewController: UITableViewController {
 
             self.devices = state.remoteDevices.map { d in
                 let t = "\(d.deviceType)"
-                return RemoteDevice(id: d.id, name: d.displayName, type: t, isCurrentDevice: d.isCurrentDevice, lastAccessTime: d.lastAccessTime, availableCommands: nil)
+                let lastAccessTime = d.lastAccessTime == nil ? nil : UInt64(clamping: d.lastAccessTime!)
+                return RemoteDevice(id: d.id, name: d.displayName, type: t, isCurrentDevice: d.isCurrentDevice, lastAccessTime: lastAccessTime, availableCommands: nil)
             }
 
             if self.devices.isEmpty {
                 self.navigationItem.rightBarButtonItem = nil
             } else {
-                self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.SendToSendButtonTitle, style: .done, target: self, action: #selector(self.send))
+                self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: .SendToSendButtonTitle, style: .done, target: self, action: #selector(self.send))
                 self.navigationItem.rightBarButtonItem?.isEnabled = false
             }
 
@@ -259,15 +260,15 @@ class DevicePickerTableViewHeaderCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        addSubview(nameLabel)
+        contentView.addSubview(nameLabel)
         nameLabel.font = DevicePickerViewControllerUX.TableHeaderTextFont
-        nameLabel.text = Strings.SendToDevicesListTitle
+        nameLabel.text = .SendToDevicesListTitle
         nameLabel.textColor = DevicePickerViewControllerUX.TableHeaderTextColor
 
         nameLabel.snp.makeConstraints { (make) -> Void in
-            make.left.equalTo(DevicePickerViewControllerUX.TableHeaderTextPaddingLeft)
-            make.centerY.equalTo(self)
-            make.right.equalTo(self)
+            make.left.equalTo(contentView).offset(DevicePickerViewControllerUX.TableHeaderTextPaddingLeft)
+            make.centerY.equalTo(contentView)
+            make.right.equalTo(contentView)
         }
 
         preservesSuperviewLayoutMargins = false
@@ -328,11 +329,7 @@ class DevicePickerTableViewCell: UITableViewCell {
         nameLabel.font = DevicePickerViewControllerUX.DeviceRowTextFont
         nameLabel.numberOfLines = 2
         nameLabel.lineBreakMode = .byWordWrapping
-        if #available(iOS 13.0, *) {
-            self.tintColor = UIColor.label
-        } else {
-            self.tintColor = UIColor.gray
-        }
+        self.tintColor = UIColor.label
         self.preservesSuperviewLayoutMargins = false
         self.selectionStyle = .none
     }
@@ -358,7 +355,7 @@ class DevicePickerNoClientsTableViewCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupHelpView(contentView,
-            introText: Strings.SendToNoDevicesFound,
+            introText: .SendToNoDevicesFound,
             showMeText: "") // TODO We used to have a 'show me how to ...' text here. But, we cannot open web pages from the extension. So this is clear for now until we decide otherwise.
         // Move the separator off screen
         separatorInset = UIEdgeInsets(top: 0, left: 1000, bottom: 0, right: 0)

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 // IMPORTANT!: Please take into consideration when adding new imports to
 // this file that it is utilized by external components besides the core
@@ -12,8 +12,9 @@ import Shared
 import Storage
 import Sync
 import XCGLogger
-import SwiftKeychainWrapper
 import SyncTelemetry
+import AuthenticationServices
+import MozillaAppServices
 
 // Import these dependencies ONLY for the main `Client` application target.
 #if MOZ_TARGET_CLIENT
@@ -148,6 +149,73 @@ protocol Profile: AnyObject {
     func sendItem(_ item: ShareItem, toDevices devices: [RemoteDevice]) -> Success
 
     var syncManager: SyncManager! { get }
+    
+    func syncCredentialIdentities() -> Deferred<Result<Void, Error>>
+    func updateCredentialIdentities() -> Deferred<Result<Void, Error>>
+    func clearCredentialStore() -> Deferred<Result<Void, Error>>
+}
+
+extension Profile {
+    
+    func syncCredentialIdentities() -> Deferred<Result<Void, Error>> {
+        let deferred = Deferred<Result<Void, Error>>()
+        self.clearCredentialStore().upon { clearResult in
+            self.updateCredentialIdentities().upon { updateResult in
+                switch (clearResult, updateResult) {
+                case (.success, .success):
+                    deferred.fill(.success(()))
+                case (.failure(let error), _):
+                    deferred.fill(.failure(error))
+                case (_, .failure(let error)):
+                    deferred.fill(.failure(error))
+                }
+            }
+        }
+        return deferred
+    }
+
+    func updateCredentialIdentities() -> Deferred<Result<Void, Error>> {
+        let deferred = Deferred<Result<Void, Error>>()
+        self.logins.listLogins().upon { loginResult in
+            switch loginResult {
+            case let .failure(error):
+                deferred.fill(.failure(error))
+            case let .success(logins):
+                
+                self.populateCredentialStore(
+                        identities: logins.map(\.passwordCredentialIdentity)
+                ).upon(deferred.fill)
+            }
+        }
+        return deferred
+    }
+
+    func populateCredentialStore(identities: [ASPasswordCredentialIdentity]) -> Deferred<Result<Void, Error>>  {
+        let deferred = Deferred<Result<Void, Error>>()
+        ASCredentialIdentityStore.shared.saveCredentialIdentities(identities) { (success, error) in
+            if success {
+                deferred.fill(.success(()))
+            } else if let err = error {
+                deferred.fill(.failure(err))
+            }
+        }
+        return deferred
+        
+    }
+
+    func clearCredentialStore() -> Deferred<Result<Void, Error>> {
+        let deferred = Deferred<Result<Void, Error>>()
+        
+        ASCredentialIdentityStore.shared.removeAllCredentialIdentities { (success, error) in
+            if success {
+                deferred.fill(.success(()))
+            } else if let err = error {
+                deferred.fill(.failure(err))
+            }
+        }
+        
+        return deferred
+    }
 }
 
 fileprivate let PrefKeyClientID = "PrefKeyClientID"
@@ -166,7 +234,7 @@ extension Profile {
 
 open class BrowserProfile: Profile {
     fileprivate let name: String
-    fileprivate let keychain: KeychainWrapper
+    fileprivate let keychain: MZKeychainWrapper
     var isShutdown = false
 
     internal let files: FileAccessor
@@ -174,19 +242,6 @@ open class BrowserProfile: Profile {
     let db: BrowserDB
     let readingListDB: BrowserDB
     var syncManager: SyncManager!
-
-    private let loginsSaltKeychainKey = "sqlcipher.key.logins.salt"
-    private let loginsUnlockKeychainKey = "sqlcipher.key.logins.db"
-    private lazy var loginsKey: String = {
-        if let secret = keychain.string(forKey: loginsUnlockKeychainKey) {
-            return secret
-        }
-
-        let Length: UInt = 256
-        let secret = Bytes.generateRandomBytes(Length).base64EncodedString
-        keychain.set(secret, forKey: loginsUnlockKeychainKey, withAccessibility: .afterFirstUnlock)
-        return secret
-    }()
 
     var syncDelegate: SyncDelegate?
 
@@ -206,7 +261,7 @@ open class BrowserProfile: Profile {
         log.debug("Initing profile \(localName) on thread \(Thread.current).")
         self.name = localName
         self.files = ProfileFileAccessor(localName: localName)
-        self.keychain = KeychainWrapper.sharedAppContainerKeychain
+        self.keychain = MZKeychainWrapper.sharedClientAppContainerKeychain
         self.syncDelegate = syncDelegate
 
         if clear {
@@ -230,7 +285,7 @@ open class BrowserProfile: Profile {
 
         if isNewProfile {
             log.info("New profile. Removing old Keychain/Prefs data.")
-            KeychainWrapper.wipeKeychain()
+            MZKeychainWrapper.wipeKeychain()
             prefs.clearAll()
         }
 
@@ -255,7 +310,9 @@ open class BrowserProfile: Profile {
             case .warn:
                 log.warning(logString)
             case .error:
-              
+                /*
+                Sentry.shared.sendWithStacktrace(message: logString, tag: .rustLog, severity: .error)
+                 */
                 log.error(logString)
             }
 
@@ -514,17 +571,10 @@ open class BrowserProfile: Profile {
     }
 
     lazy var logins: RustLogins = {
-        let databasePath = URL(fileURLWithPath: (try! files.getAndEnsureDirectory()), isDirectory: true).appendingPathComponent("logins.db").path
+        let sqlCipherDatabasePath = URL(fileURLWithPath: (try! files.getAndEnsureDirectory()), isDirectory: true).appendingPathComponent("logins.db").path
+        let databasePath = URL(fileURLWithPath: (try! files.getAndEnsureDirectory()), isDirectory: true).appendingPathComponent("loginsPerField.db").path
 
-        let salt: String
-        if let val = keychain.string(forKey: loginsSaltKeychainKey) {
-            salt = val
-        } else {
-            salt = RustLogins.setupPlaintextHeaderAndGetSalt(databasePath: databasePath, encryptionKey: loginsKey)
-            keychain.set(salt, forKey: loginsSaltKeychainKey, withAccessibility: .afterFirstUnlock)
-        }
-
-        return RustLogins(databasePath: databasePath, encryptionKey: loginsKey, salt: salt)
+        return RustLogins(sqlCipherDatabasePath: sqlCipherDatabasePath, databasePath: databasePath)
     }()
 
     func hasAccount() -> Bool {
@@ -549,17 +599,28 @@ open class BrowserProfile: Profile {
 
         // remove Account Metadata
         prefs.removeObjectForKey(PrefsKeys.KeyLastRemoteTabSyncTime)
-
+        
         // Save the keys that will be restored
-        let salt = keychain.string(forKey: loginsSaltKeychainKey)
-        let unlockKey = loginsKey
+        let rustLoginsKeys = RustLoginEncryptionKeys()
+        let perFieldKey = keychain.string(forKey: rustLoginsKeys.loginPerFieldKeychainKey)
+        let sqlCipherKey = keychain.string(forKey: rustLoginsKeys.loginsUnlockKeychainKey)
+        let sqlCipherSalt = keychain.string(forKey: rustLoginsKeys.loginPerFieldKeychainKey)
+        
         // Remove all items, removal is not key-by-key specific (due to the risk of failing to delete something), simply restore what is needed.
         keychain.removeAllKeys()
+        
         // Restore the keys that are still needed
-        if let salt = salt {
-            keychain.set(salt, forKey: loginsSaltKeychainKey, withAccessibility: .afterFirstUnlock)
+        if let sqlCipherKey = sqlCipherKey {
+            keychain.set(sqlCipherKey, forKey: rustLoginsKeys.loginsUnlockKeychainKey, withAccessibility: MZKeychainItemAccessibility.afterFirstUnlock)
         }
-        keychain.set(unlockKey, forKey: loginsUnlockKeychainKey, withAccessibility: .afterFirstUnlock)
+        
+        if let sqlCipherSalt = sqlCipherSalt {
+            keychain.set(sqlCipherSalt, forKey: rustLoginsKeys.loginsSaltKeychainKey, withAccessibility: MZKeychainItemAccessibility.afterFirstUnlock)
+        }
+        
+        if let perFieldKey = perFieldKey {
+            keychain.set(perFieldKey, forKey: rustLoginsKeys.loginPerFieldKeychainKey, withAccessibility: .afterFirstUnlock)
+        }
 
         // Tell any observers that our account has changed.
         NotificationCenter.default.post(name: .FirefoxAccountChanged, object: nil)
@@ -828,7 +889,7 @@ open class BrowserProfile: Profile {
             case "history":
                 return HistorySynchronizer.resetSynchronizerWithStorage(self.profile.history, basePrefs: self.prefsForSync, collection: "history")
             case "passwords":
-                return self.profile.logins.reset()
+                return self.profile.logins.resetSync()
             case "forms":
                 log.debug("Requested reset for forms, but this client doesn't sync them yet.")
                 return succeed()
@@ -855,7 +916,7 @@ open class BrowserProfile: Profile {
             let remove = [
                 profile.history.onRemovedAccount,
                 profile.remoteClientsAndTabs.onRemovedAccount,
-                profile.logins.reset,
+                profile.logins.resetSync,
                 profile.places.resetBookmarksMetadata,
             ]
 
@@ -914,7 +975,8 @@ open class BrowserProfile: Profile {
                     guard let self = self else { return }
                     let devices = state.remoteDevices.map { d -> RemoteDevice in
                         let t = "\(d.deviceType)"
-                        return RemoteDevice(id: d.id, name: d.displayName, type: t, isCurrentDevice: d.isCurrentDevice, lastAccessTime: d.lastAccessTime, availableCommands: nil)
+                        let lastAccessTime = d.lastAccessTime == nil ? nil : UInt64(clamping: d.lastAccessTime!)
+                        return RemoteDevice(id: d.id, name: d.displayName, type: t, isCurrentDevice: d.isCurrentDevice, lastAccessTime: lastAccessTime, availableCommands: nil)
                     }
                     let _ = self.profile.remoteClientsAndTabs.replaceRemoteDevices(devices)
                 }
@@ -951,6 +1013,10 @@ open class BrowserProfile: Profile {
         public class SyncUnlockGetURLError: MaybeErrorType {
             public var description = "Failed to get token server endpoint url."
         }
+        
+        public class EncryptionKeyError: MaybeErrorType {
+            public var description = "Failed to get stored key."
+        }
 
         fileprivate func syncUnlockInfo() -> Deferred<Maybe<SyncUnlockInfo>> {
             let d = Deferred<Maybe<SyncUnlockInfo>>()
@@ -966,8 +1032,16 @@ open class BrowserProfile: Profile {
                             d.fill(Maybe(failure: SyncUnlockGetURLError()))
                             return
                         }
+                        
+                        guard let encryptionKey = try? self.profile.logins.getStoredKey() else {
+                            /*
+                            Sentry.shared.sendWithStacktrace(message: "Stored logins encryption could not be retrieved", tag: SentryTag.rustLogins, severity: .warning)
+                             */
+                            d.fill(Maybe(failure: EncryptionKeyError()))
+                            return
+                        }
 
-                        d.fill(Maybe(success: SyncUnlockInfo(kid: key.kid, fxaAccessToken: accessTokenInfo.token, syncKey: key.k, tokenserverURL: tokenServerEndpointURL.absoluteString)))
+                        d.fill(Maybe(success: SyncUnlockInfo(kid: key.kid, fxaAccessToken: accessTokenInfo.token, syncKey: key.k, tokenserverURL: tokenServerEndpointURL.absoluteString, loginEncryptionKey: encryptionKey)))
                     }
                 }
             }
@@ -981,12 +1055,15 @@ open class BrowserProfile: Profile {
                     return deferMaybe(SyncStatus.notStarted(.unknown))
                 }
 
-                return self.profile.logins.sync(unlockInfo: syncUnlockInfo).bind({ result in
+                return self.profile.logins.syncLogins(unlockInfo: syncUnlockInfo).bind({ [weak self] result in
                     guard result.isSuccess else {
                         return deferMaybe(SyncStatus.notStarted(.unknown))
                     }
 
                     let syncEngineStatsSession = SyncEngineStatsSession(collection: "logins")
+                    self?.profile.syncCredentialIdentities().upon { result in
+                        log.debug(result)
+                    }
                     return deferMaybe(SyncStatus.completed(syncEngineStatsSession))
                 })
             })

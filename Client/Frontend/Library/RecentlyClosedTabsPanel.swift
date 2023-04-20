@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 
@@ -16,8 +16,14 @@ private struct RecentlyClosedPanelUX {
     static let IconBorderWidth: CGFloat = 0.5
 }
 
+protocol RecentlyClosedPanelDelegate: AnyObject {
+    func openRecentlyClosedSiteInSameTab(_ url: URL)
+    func openRecentlyClosedSiteInNewTab(_ url: URL, isPrivate: Bool)
+}
+
 class RecentlyClosedTabsPanel: UIViewController, LibraryPanel {
     weak var libraryPanelDelegate: LibraryPanelDelegate?
+    var recentlyClosedTabsDelegate: RecentlyClosedPanelDelegate?
     let profile: Profile
 
     fileprivate lazy var tableViewController = RecentlyClosedTabsPanelSiteTableViewController(profile: profile)
@@ -37,20 +43,26 @@ class RecentlyClosedTabsPanel: UIViewController, LibraryPanel {
         view.backgroundColor = UIColor.theme.tableView.headerBackground
 
         tableViewController.libraryPanelDelegate = libraryPanelDelegate
+        tableViewController.recentlyClosedTabsDelegate = recentlyClosedTabsDelegate
         tableViewController.recentlyClosedTabsPanel = self
 
         self.addChild(tableViewController)
         tableViewController.didMove(toParent: self)
 
         self.view.addSubview(tableViewController.view)
-        tableViewController.view.snp.makeConstraints { make in
-            make.edges.equalTo(self.view)
-        }
+        
+        NSLayoutConstraint.activate([
+            tableViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            tableViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 }
 
 class RecentlyClosedTabsPanelSiteTableViewController: SiteTableViewController {
     weak var libraryPanelDelegate: LibraryPanelDelegate?
+    var recentlyClosedTabsDelegate: RecentlyClosedPanelDelegate?
     var recentlyClosedTabs: [ClosedTab] = []
     weak var recentlyClosedTabsPanel: RecentlyClosedTabsPanel?
 
@@ -74,30 +86,31 @@ class RecentlyClosedTabsPanelSiteTableViewController: SiteTableViewController {
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
-        guard let twoLineCell = cell as? TwoLineTableViewCell else {
+        guard let twoLineCell = cell as? TwoLineImageOverlayCell else {
             return cell
         }
         let tab = recentlyClosedTabs[indexPath.row]
         let displayURL = tab.url.displayURL ?? tab.url
-        twoLineCell.setLines(tab.title, detailText: displayURL.absoluteDisplayString)
         let site: Favicon? = (tab.faviconURL != nil) ? Favicon(url: tab.faviconURL!) : nil
-        cell.imageView?.layer.borderColor = RecentlyClosedPanelUX.IconBorderColor.cgColor
-        cell.imageView?.layer.borderWidth = RecentlyClosedPanelUX.IconBorderWidth
-        cell.imageView?.contentMode = .center
-        cell.imageView?.setImageAndBackground(forIcon: site, website: displayURL) { [weak cell] in
-            cell?.imageView?.image = cell?.imageView?.image?.createScaled(RecentlyClosedPanelUX.IconSize)
+        twoLineCell.descriptionLabel.isHidden = false
+        twoLineCell.titleLabel.text = tab.title
+        twoLineCell.titleLabel.isHidden = tab.title?.isEmpty ?? true ? true : false
+        twoLineCell.descriptionLabel.text = displayURL.absoluteDisplayString        
+        twoLineCell.leftImageView.layer.borderColor = RecentlyClosedPanelUX.IconBorderColor.cgColor
+        twoLineCell.leftImageView.layer.borderWidth = RecentlyClosedPanelUX.IconBorderWidth
+        twoLineCell.leftImageView.contentMode = .center
+        twoLineCell.leftImageView.setImageAndBackground(forIcon: site, website: displayURL) { [weak twoLineCell] in
+            twoLineCell?.leftImageView.image = twoLineCell?.leftImageView.image?.createScaled(RecentlyClosedPanelUX.IconSize)
         }
-        return cell
+        
+        return twoLineCell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard let libraryPanelDelegate = libraryPanelDelegate else {
-            log.warning("No site or no URL when selecting row.")
-            return
-        }
+        recentlyClosedTabsDelegate?.openRecentlyClosedSiteInNewTab(recentlyClosedTabs[indexPath.row].url, isPrivate: false)
         let visitType = VisitType.typed    // Means History, too.
-        libraryPanelDelegate.libraryPanel(didSelectURL: recentlyClosedTabs[indexPath.row].url, visitType: visitType)
+        libraryPanelDelegate?.libraryPanel(didSelectURL: recentlyClosedTabs[indexPath.row].url, visitType: visitType)
     }
 
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -132,12 +145,15 @@ extension RecentlyClosedTabsPanelSiteTableViewController: LibraryPanelContextMen
         return site
     }
 
-    func getContextMenuActions(for site: Site, with indexPath: IndexPath) -> [PhotonActionSheetItem]? {
+    func getContextMenuActions(for site: Site, with indexPath: IndexPath) -> [PhotonRowActions]? {
+        guard let libraryPanelDelegate = libraryPanelDelegate else {
+            return getRecentlyClosedTabContexMenuActions(for: site, recentlyClosedPanelDelegate: recentlyClosedTabsDelegate)
+        }
         return getDefaultContextMenuActions(for: site, libraryPanelDelegate: libraryPanelDelegate)
     }
 }
 
-extension RecentlyClosedTabsPanel: Themeable {
+extension RecentlyClosedTabsPanel: NotificationThemeable {
     func applyTheme() {
         tableViewController.tableView.reloadData()
     }

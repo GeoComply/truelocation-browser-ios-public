@@ -1,4 +1,0 @@
-module ContentBlockerGenLib {
-    header "/Users/geotech/Documents/geoguard/geoguard-browser/content-blocker-lib-ios/ContentBlockerGen/.build/x86_64-apple-macosx/debug/ContentBlockerGenLib.build/ContentBlockerGenLib-Swift.h"
-    requires objc
-}

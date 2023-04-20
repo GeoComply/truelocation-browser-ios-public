@@ -1,13 +1,13 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import UIKit
 import Shared
 import SnapKit
 
-class TabTableViewCell: UITableViewCell, Themeable {
+class TabTableViewCell: UITableViewCell, NotificationThemeable {
     static let identifier = "tabCell"
     var screenshotView: UIImageView?
     var websiteTitle: UILabel?
@@ -39,30 +39,30 @@ class TabTableViewCell: UITableViewCell, Themeable {
         
         screenshotView.contentMode = .scaleAspectFill
         screenshotView.clipsToBounds = true
-        screenshotView.layer.cornerRadius = TabTrayV2ControllerUX.cornerRadius
+        screenshotView.layer.cornerRadius = ChronologicalTabsControllerUX.cornerRadius
         screenshotView.layer.borderWidth = 1
         screenshotView.layer.borderColor = UIColor.Photon.Grey30.cgColor
         
         screenshotView.snp.makeConstraints { make in
             make.height.width.equalTo(100)
-            make.leading.equalToSuperview().offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
-            make.top.equalToSuperview().offset(TabTrayV2ControllerUX.screenshotMarginTopBottom)
-            make.bottom.equalToSuperview().offset(-TabTrayV2ControllerUX.screenshotMarginTopBottom)
+            make.leading.equalToSuperview().offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
+            make.top.equalToSuperview().offset(ChronologicalTabsControllerUX.screenshotMarginTopBottom)
+            make.bottom.equalToSuperview().offset(-ChronologicalTabsControllerUX.screenshotMarginTopBottom)
         }
         
         websiteTitle.numberOfLines = 2
         websiteTitle.snp.makeConstraints { make in
-            make.leading.equalTo(screenshotView.snp.trailing).offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
-            make.top.equalToSuperview().offset(TabTrayV2ControllerUX.textMarginTopBottom)
+            make.leading.equalTo(screenshotView.snp.trailing).offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
+            make.top.equalToSuperview().offset(ChronologicalTabsControllerUX.textMarginTopBottom)
             make.bottom.equalTo(urlLabel.snp.top)
             make.trailing.equalToSuperview().offset(-16)
         }
 
         urlLabel.snp.makeConstraints { make in
-            make.leading.equalTo(screenshotView.snp.trailing).offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
+            make.leading.equalTo(screenshotView.snp.trailing).offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
             make.trailing.equalToSuperview()
             make.top.equalTo(websiteTitle.snp.bottom).offset(3)
-            make.bottom.equalToSuperview().offset(-TabTrayV2ControllerUX.textMarginTopBottom * CGFloat(websiteTitle.numberOfLines))
+            make.bottom.equalToSuperview().offset(-ChronologicalTabsControllerUX.textMarginTopBottom * CGFloat(websiteTitle.numberOfLines))
         }
     }
     
@@ -71,8 +71,8 @@ class TabTableViewCell: UITableViewCell, Themeable {
         guard let websiteTitle = websiteTitle, let text = websiteTitle.text, !text.isEmpty, let screenshotView = screenshotView, let urlLabel = urlLabel else { return }
         websiteTitle.numberOfLines = 2
         websiteTitle.snp.remakeConstraints { make in
-            make.leading.equalTo(screenshotView.snp.trailing).offset(TabTrayV2ControllerUX.screenshotMarginLeftRight)
-            make.top.equalToSuperview().offset(TabTrayV2ControllerUX.textMarginTopBottom)
+            make.leading.equalTo(screenshotView.snp.trailing).offset(ChronologicalTabsControllerUX.screenshotMarginLeftRight)
+            make.top.equalToSuperview().offset(ChronologicalTabsControllerUX.textMarginTopBottom)
             make.bottom.equalTo(urlLabel.snp.top)
             make.trailing.equalToSuperview().offset(-16)
         }
@@ -88,16 +88,9 @@ class TabTableViewCell: UITableViewCell, Themeable {
     }
 
     func applyTheme() {
-        if #available(iOS 13.0, *) {
-            backgroundColor = UIColor.secondarySystemGroupedBackground
-            textLabel?.textColor = UIColor.label
-            detailTextLabel?.textColor = UIColor.secondaryLabel
-            closeButton.tintColor = UIColor.secondaryLabel
-        } else {
-            backgroundColor = UIColor.theme.tableView.rowBackground
-            textLabel?.textColor = UIColor.theme.tableView.rowText
-            detailTextLabel?.textColor = UIColor.theme.tableView.rowDetailText
-            closeButton.tintColor = UIColor.theme.tabTray.cellCloseButton
-        }
+        backgroundColor = UIColor.secondarySystemGroupedBackground
+        textLabel?.textColor = UIColor.label
+        detailTextLabel?.textColor = UIColor.secondaryLabel
+        closeButton.tintColor = UIColor.secondaryLabel
     }
 }
