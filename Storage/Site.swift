@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -36,6 +36,11 @@ open class Site: Identifiable {
     open var tileURL: URL {
         return URL(string: url)?.domainURL ?? URL(string: "about:blank")!
     }
+    
+    // i.e. `http://www.example.com/` --> `example`
+    open var secondLevelDomain: String? {
+        return URL(string: url)?.host?.components(separatedBy: ".").suffix(2).first
+    }
 
     public let url: String
     public let title: String
@@ -61,3 +66,14 @@ open class Site: Identifiable {
     }
 
 }
+
+extension Site: Hashable {
+     public func hash(into hasher: inout Hasher) {
+         hasher.combine(id)
+     }
+
+     public static func == (lhs: Site, rhs: Site) -> Bool {
+         lhs.url == rhs.url
+     }
+    
+ }

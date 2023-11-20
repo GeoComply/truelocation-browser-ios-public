@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -25,25 +25,38 @@ class ScreenshotHelper {
      */
     func takeScreenshot(_ tab: Tab) {
         guard let webView = tab.webView, let url = tab.url else {
-          
+            /*
+            Sentry.shared.send(message: "Tab Snapshot Error", tag: .tabManager, severity: .debug, description: "Tab webView or url is nil")
+             */
             return
         }
         //Handle home page snapshots, can not use Apple API snapshot function for this
         if InternalURL(url)?.isAboutHomeURL ?? false {
             if let homePanel = controller?.firefoxHomeViewController {
                 let screenshot = homePanel.view.screenshot(quality: UIConstants.ActiveScreenshotQuality)
+                tab.hasHomeScreenshot = true
                 tab.setScreenshot(screenshot)
+                TabEvent.post(.didSetScreenshot(isHome: true) , for: tab)
             }
         //Handle webview screenshots
         } else {
             let configuration = WKSnapshotConfiguration()
             //This is for a bug in certain iOS 13 versions, snapshots cannot be taken correctly without this boolean being set
-            if #available(iOS 13.0, *) {
-                configuration.afterScreenUpdates = false
-            }
+            configuration.afterScreenUpdates = false
+            
             webView.takeSnapshot(with: configuration) { image, error in
                 if let image = image {
+                    tab.hasHomeScreenshot = false
                     tab.setScreenshot(image)
+                    TabEvent.post(.didSetScreenshot(isHome: false) , for: tab)
+                } else if let error = error {
+                    /*
+                    Sentry.shared.send(message: "Tab snapshot error", tag: .tabManager, severity: .debug, description: error.localizedDescription)
+                     */
+                } else {
+                    /*
+                    Sentry.shared.send(message: "Tab snapshot error", tag: .tabManager, severity: .debug, description: "No error description")
+                     */
                 }
             }
         }

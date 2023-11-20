@@ -2,9 +2,9 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import UIKit
 import Shared
 import MozillaAppServices
-import SwiftKeychainWrapper
 
 let PendingAccountDisconnectedKey = "PendingAccountDisconnect"
 
@@ -165,7 +165,7 @@ open class RustFirefoxAccounts {
         NotificationCenter.default.addObserver(forName: .accountAuthenticated, object: nil, queue: .main) { [weak self] notification in
             // Handle account migration completed successfully. Need to clear the old stored apnsToken and re-register push.
             if let type = notification.userInfo?["authType"] as? FxaAuthType, case .migrated = type {
-                KeychainWrapper.sharedAppContainerKeychain.removeObject(forKey: KeychainKey.apnsToken, withAccessibility: .afterFirstUnlock)
+                MZKeychainWrapper.sharedClientAppContainerKeychain.removeObject(forKey: KeychainKey.apnsToken, withAccessibility: .afterFirstUnlock)
                 NotificationCenter.default.post(name: .RegisterForPushNotifications, object: nil)
             }
 
@@ -181,6 +181,9 @@ open class RustFirefoxAccounts {
             if let error = notification.userInfo?["error"] as? Error {
                 info = error.localizedDescription
             }
+            /*
+            Sentry.shared.send(message: "RustFxa failed account migration", tag: .rustLog, severity: .error, description: info)
+             */
             self?.accountMigrationFailed = true
             NotificationCenter.default.post(name: .FirefoxAccountStateChange, object: nil)
         }
@@ -191,7 +194,7 @@ open class RustFirefoxAccounts {
         // Keychain forKey("profile.account"), return dictionary, from there
         // forKey("account.state.<guid>"), guid is dictionary["stateKeyLabel"]
         // that returns JSON string.
-        let keychain = KeychainWrapper.sharedAppContainerKeychain
+        let keychain = MZKeychainWrapper.sharedClientAppContainerKeychain
         let key = "profile.account"
         keychain.ensureObjectItemAccessibility(.afterFirstUnlock, forKey: key)
 
@@ -230,7 +233,7 @@ open class RustFirefoxAccounts {
     /// Rust FxA notification handlers can call this to update caches and the UI.
     private func update() {
         guard let accountManager = accountManager.peek() else { return }
-        let avatarUrl = accountManager.accountProfile()?.avatar?.url
+        let avatarUrl = accountManager.accountProfile()?.avatar
         if let str = avatarUrl, let url = URL(string: str) {
             avatar = Avatar(url: url)
         }
@@ -285,7 +288,7 @@ open class RustFirefoxAccounts {
         prefs?.removeObjectForKey(PendingAccountDisconnectedKey)
         cachedUserProfile = nil
         pushNotifications.unregister()
-        KeychainWrapper.sharedAppContainerKeychain.removeObject(forKey: KeychainKey.apnsToken, withAccessibility: .afterFirstUnlock)
+        MZKeychainWrapper.sharedClientAppContainerKeychain.removeObject(forKey: KeychainKey.apnsToken, withAccessibility: .afterFirstUnlock)
     }
 
     public func hasAccount() -> Bool {
@@ -309,10 +312,10 @@ public struct FxAUserProfile: Codable, Equatable {
     public let avatarUrl: String?
     public let displayName: String?
 
-    init(profile: MozillaAppServices.Profile) {
+    init(profile: Profile) {
         uid = profile.uid
         email = profile.email
-        avatarUrl = profile.avatar?.url
+        avatarUrl = profile.avatar
         displayName = profile.displayName
     }
 }

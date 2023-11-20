@@ -401,19 +401,19 @@
 "FxA.TakeYourWebWithYou" = "Take Your Web With You";
 
 /* Title of a notification displayed when another device has connected to FxA. %@ refers to the name of the newly connected device. */
-"FxAPush_DeviceConnected_body" = "Firefox Sync has connected to %@";
+"FxAPush_DeviceConnected_body" = "TrueLocation Browser Sync has connected to %@";
 
 /* Title of a notification displayed when another device has connected to FxA. */
 "FxAPush_DeviceConnected_title" = "Sync Connected";
 
 /* Body of a notification displayed when this device has been disconnected from FxA by another device. */
-"FxAPush_DeviceDisconnected_ThisDevice_body" = "This device has been successfully disconnected from Firefox Sync.";
+"FxAPush_DeviceDisconnected_ThisDevice_body" = "This device has been successfully disconnected from TrueLocation Browser Sync.";
 
 /* Title of a notification displayed when this device has been disconnected by another device. */
 "FxAPush_DeviceDisconnected_ThisDevice_title" = "Sync Disconnected";
 
 /* Body of a notification displayed when unnamed device has been disconnected from FxA. */
-"FxAPush_DeviceDisconnected_UnknownDevice_body" = "A device has disconnected from Firefox Sync";
+"FxAPush_DeviceDisconnected_UnknownDevice_body" = "A device has disconnected from TrueLocation Browser Sync";
 
 /* Body of a notification displayed when named device has been disconnected from FxA. %@ refers to the name of the disconnected device. */
 "FxAPush_DeviceDisconnected_body" = "%@ has been successfully disconnected.";
@@ -1422,7 +1422,7 @@
 "ShareExtension.LoadInBackgroundAction.Title" = "Load in Background";
 
 /* Share extension label shown after user has performed 'Load in Background' action. */
-"ShareExtension.LoadInBackgroundActionDone.Title" = "Loading in Firefox";
+"ShareExtension.LoadInBackgroundActionDone.Title" = "Loading in TrueLocation Browser";
 
 /* Action label on share extension to immediately open page in Firefox. */
 "ShareExtension.OpenInFirefoxAction.Title" = "Open in TrueLocation Browser";
@@ -1660,19 +1660,19 @@
 "computer" = "computer";
 
 /* Instructions shown on qr code scanning view */
-"fxa.qr-scanning-view.instructions" = "Scan the QR code shown at firefox.com/pair";
+"fxa.qr-scanning-view.instructions" = "Scan the QR code shown at tlb.com/pair";
 
 /* FxA sign in view subtitle */
 "fxa.signin.camera-signin" = "Sign In with Your Camera";
 
 /* FxA sign in create account label. */
-"fxa.signin.create-account-pt-1" = "Sync Firefox between devices with an account.";
+"fxa.signin.create-account-pt-1" = "Sync TrueLocation Browser between devices with an account.";
 
 /* FxA sign in create account label. This will be linked to the site to create an account. */
 "fxa.signin.create-account-pt-2" = "Create TrueLocation Browser account.";
 
 /* FxA sign in view qr code instructions */
-"fxa.signin.qr-link-instruction" = "On your computer open Firefox and go to firefox.com/pair";
+"fxa.signin.qr-link-instruction" = "On your computer open TrueLocation Browser and go to tlb.com/pair";
 
 /* FxA sign in view qr code scan button */
 "fxa.signin.ready-to-scan" = "Ready to Scan";

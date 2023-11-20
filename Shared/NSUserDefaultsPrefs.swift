@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -76,6 +76,11 @@ open class NSUserDefaultsPrefs: Prefs {
         // boolForKey just returns false if the key doesn't exist. We need to
         // distinguish between false and non-existent keys, so use objectForKey
         // and cast the result instead.
+        // Overriden
+        if defaultName == AppConstants.PrefSendUsageData || defaultName == AppConstants.PrefStudiesToggle {
+            return false
+        }
+        
         let number = userDefaults.object(forKey: qualifyKey(defaultName)) as? NSNumber
         return number?.boolValue
     }

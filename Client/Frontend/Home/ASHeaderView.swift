@@ -1,109 +1,126 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
-import SnapKit
+import UIKit
 
 // MARK: - Section Header View
 public struct FirefoxHomeHeaderViewUX {
-    static var SeparatorColor: UIColor { return UIColor.theme.homePanel.separator }
-    static let TextFont = DynamicFontHelper.defaultHelper.SmallSizeHeavyWeightAS
-    static let ButtonFont = DynamicFontHelper.defaultHelper.MediumSizeBoldFontAS
-    static let SeparatorHeight = 0.5
-    static let Insets: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? FirefoxHomeUX.SectionInsetsForIpad + FirefoxHomeUX.MinimumInsets : FirefoxHomeUX.MinimumInsets
-    static let TitleTopInset: CGFloat = 5
+    static let insets: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? FirefoxHomeUX.sectionInsetsForIpad + FirefoxHomeUX.minimumInsets : FirefoxHomeUX.minimumInsets
+    static let titleTopInset: CGFloat = 5
+    static let sectionHeaderSize: CGFloat = 20
+    static let maxTitleLabelTextSize: CGFloat = 55 // Style title3 - AX5
+    static let maxMoreButtonTextSize: CGFloat = 49 // Style subheadline - AX5
 }
 
+enum ASHeaderViewType {
+    case otherGroupTabs
+    case normal
+}
+
+// Activity Stream header view
 class ASHeaderView: UICollectionReusableView {
-    static let verticalInsets: CGFloat = 4
+    // MARK: - UIElements
+    lazy var titleLabel: UILabel = .build { label in
+        label.text = self.title
+        label.font = DynamicFontHelper.defaultHelper.preferredBoldFont(withTextStyle: .title3,
+                                                                       maxSize: FirefoxHomeHeaderViewUX.maxTitleLabelTextSize)
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 0
+    }
 
-    lazy var titleLabel: UILabel = {
-        let titleLabel = UILabel()
-        titleLabel.text = self.title
-        titleLabel.textColor = UIColor.theme.homePanel.activityStreamHeaderText
-        titleLabel.font = FirefoxHomeHeaderViewUX.TextFont
-        titleLabel.minimumScaleFactor = 0.6
-        titleLabel.numberOfLines = 1
-        titleLabel.adjustsFontSizeToFitWidth = true
-        return titleLabel
-    }()
-
-    lazy var moreButton: UIButton = {
-        let button = UIButton()
+    lazy var moreButton: UIButton = .build { button in
         button.isHidden = true
-        button.titleLabel?.font = FirefoxHomeHeaderViewUX.ButtonFont
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.titleLabel?.font = DynamicFontHelper.defaultHelper.preferredFont(withTextStyle: .subheadline,
+                                                                                maxSize: FirefoxHomeHeaderViewUX.maxMoreButtonTextSize)
         button.contentHorizontalAlignment = .right
-        button.setTitleColor(UIConstants.SystemBlueColor, for: .normal)
         button.setTitleColor(UIColor.Photon.Grey50, for: .highlighted)
-        return button
-    }()
+    }
 
-    lazy var iconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.tintColor = UIColor.Photon.Grey50
-        imageView.isHidden = true
-        return imageView
-    }()
-
+    // MARK: - Variables
     var title: String? {
         willSet(newTitle) {
             titleLabel.text = newTitle
         }
     }
 
-    var leftConstraint: Constraint?
-    var rightConstraint: Constraint?
-
     var titleInsets: CGFloat {
         get {
-            return UIScreen.main.bounds.size.width == self.frame.size.width && UIDevice.current.userInterfaceIdiom == .pad ? FirefoxHomeHeaderViewUX.Insets : FirefoxHomeUX.MinimumInsets
+            return UIScreen.main.bounds.size.width == self.frame.size.width && UIDevice.current.userInterfaceIdiom == .pad ? FirefoxHomeHeaderViewUX.insets : FirefoxHomeUX.minimumInsets
         }
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        moreButton.isHidden = true
-        moreButton.setTitle(nil, for: .normal)
-        moreButton.accessibilityIdentifier = nil;
-        titleLabel.text = nil
-        moreButton.removeTarget(nil, action: nil, for: .allEvents)
-        iconView.isHidden = true
-        iconView.tintColor = UIColor.theme.homePanel.activityStreamHeaderText
-        titleLabel.textColor = UIColor.theme.homePanel.activityStreamHeaderText
-        moreButton.setTitleColor(UIConstants.SystemBlueColor, for: .normal)
-    }
+    static let verticalInsets: CGFloat = 4
+    var sectionType: ASHeaderViewType = .normal
+    private var titleLeadingConstraint: NSLayoutConstraint?
+    var notificationCenter: NotificationCenter = NotificationCenter.default
 
+    // MARK: - Initializers
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(titleLabel)
         addSubview(moreButton)
-        addSubview(iconView)
-        moreButton.snp.makeConstraints { make in
-            make.top.equalTo(self.snp.top).offset(ASHeaderView.verticalInsets)
-            make.bottom.equalToSuperview().offset(-ASHeaderView.verticalInsets)
-            self.rightConstraint = make.trailing.equalTo(self.safeArea.trailing).inset(-titleInsets).constraint
-        }
-        moreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-        titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconView.snp.trailing).offset(5)
-            make.trailing.equalTo(moreButton.snp.leading).inset(-FirefoxHomeHeaderViewUX.TitleTopInset)
-            make.top.equalTo(self.snp.top).offset(ASHeaderView.verticalInsets)
-            make.bottom.equalToSuperview().offset(-ASHeaderView.verticalInsets)
-        }
-        iconView.snp.makeConstraints { make in
-            self.leftConstraint = make.leading.equalTo(self.safeArea.leading).inset(titleInsets).constraint
-            make.centerY.equalTo(self.snp.centerY)
-            make.size.equalTo(16)
-        }
-    }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        leftConstraint?.update(offset: titleInsets)
-        rightConstraint?.update(offset: -titleInsets)
+        NSLayoutConstraint.activate([
+            moreButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
+            moreButton.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -titleInsets),
+
+            titleLabel.topAnchor.constraint(equalTo: topAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: moreButton.leadingAnchor, constant: -FirefoxHomeHeaderViewUX.titleTopInset),
+            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+        ])
+
+        moreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        titleLabel.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
+
+        titleLeadingConstraint = titleLabel.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: titleInsets)
+        titleLeadingConstraint?.isActive = true
+
+        applyTheme()
+        setupNotifications(forObserver: self,
+                           observing: [.DisplayThemeChanged])
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        notificationCenter.removeObserver(self)
+    }
+
+    // MARK: - Helper functions
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        moreButton.isHidden = true
+        moreButton.setTitle(nil, for: .normal)
+        moreButton.accessibilityIdentifier = nil
+        titleLabel.text = nil
+        moreButton.removeTarget(nil, action: nil, for: .allEvents)
+    }
+
+    func remakeConstraint(type: ASHeaderViewType) {
+        let inset = type == .otherGroupTabs ? 15 : titleInsets
+        titleLeadingConstraint?.constant = inset
+    }
+}
+
+// MARK: - Theme
+extension ASHeaderView: NotificationThemeable {
+    func applyTheme() {
+        titleLabel.textColor = UIColor.theme.homePanel.activityStreamHeaderText
+        moreButton.setTitleColor(UIColor.theme.homePanel.activityStreamHeaderButton, for: .normal)
+    }
+}
+
+// MARK: - Notifiable
+extension ASHeaderView: Notifiable {
+    func handleNotifications(_ notification: Notification) {
+        switch notification.name {
+        case .DisplayThemeChanged:
+            applyTheme()
+        default: break
+        }
     }
 }

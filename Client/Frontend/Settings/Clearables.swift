@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -28,8 +28,11 @@ class ClearableError: MaybeErrorType {
 // Clears our browsing history, including favicons and thumbnails.
 class HistoryClearable: Clearable {
     let profile: Profile
-    init(profile: Profile) {
+    let tabManager: TabManager
+    
+    init(profile: Profile, tabManager: TabManager) {
         self.profile = profile
+        self.tabManager = tabManager
     }
 
     var label: String { .ClearableHistory }
@@ -46,6 +49,9 @@ class HistoryClearable: Clearable {
             CSSearchableIndex.default().deleteAllSearchableItems()
             NotificationCenter.default.post(name: .PrivateDataClearedHistory, object: nil)
             log.debug("HistoryClearable succeeded: \(success).")
+            
+            self.tabManager.clearAllTabsHistory()
+            
             return Deferred(value: success)
         }
     }
@@ -82,6 +88,18 @@ class CacheClearable: Clearable {
 
         log.debug("CacheClearable succeeded.")
         return succeed()
+    }
+}
+
+class SpotlightClearable: Clearable {
+    var label: String { .ClearableSpotlight }
+
+    func clear() -> Success {
+        let deferred = Success()
+        UserActivityHandler.clearSearchIndex() { _ in
+            deferred.fill(Maybe(success: ()))
+        }
+        return deferred
     }
 }
 
@@ -146,7 +164,7 @@ class CookiesClearable: Clearable {
 class TrackingProtectionClearable: Clearable {
     //@TODO: re-using string because we are too late in cycle to change strings
     var label: String {
-        return Strings.SettingsTrackingProtectionSectionName
+        return .SettingsTrackingProtectionSectionName
     }
 
     func clear() -> Success {

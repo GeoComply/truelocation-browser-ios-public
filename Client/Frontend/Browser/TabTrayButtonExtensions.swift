@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 
-class PrivateModeButton: ToggleButton, PrivateModeUI {
+class PrivateModeButton: ToggleButton, NotificationThemeable, PrivateModeUI {
     var offTint = UIColor.black
     var onTint = UIColor.black
 
@@ -28,12 +28,17 @@ class PrivateModeButton: ToggleButton, PrivateModeUI {
 
         accessibilityValue = isSelected ? .TabTrayToggleAccessibilityValueOn : .TabTrayToggleAccessibilityValueOff
     }
+
+    func applyTheme() {
+        tintColor = isSelected ? onTint : offTint
+        imageView?.tintColor = tintColor
+    }
 }
 
 extension UIButton {
     static func newTabButton() -> UIButton {
         let newTab = UIButton()
-        newTab.setImage(UIImage.templateImageNamed("quick_action_new_tab"), for: .normal)
+        newTab.setImage(UIImage.templateImageNamed(ImageIdentifiers.newTab), for: .normal)
         newTab.accessibilityLabel = .TabTrayButtonNewTabAccessibilityLabel
         return newTab
     }

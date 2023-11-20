@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -60,6 +60,10 @@ open class WeakList<T: AnyObject>: Sequence {
         return items.firstIndex { $0.value === item }
     }
 
+    open func firstIndexDel(where predicate: (WeakRef<T>) -> Bool) -> Int? {
+        return items.firstIndex(where: predicate)
+    }
+    
     open func makeIterator() -> AnyIterator<T> {
         var index = 0
 

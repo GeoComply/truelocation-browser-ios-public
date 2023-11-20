@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -23,7 +23,7 @@ class TabTrayV2ViewModel: NSObject {
                                                    .lastWeek: Array<Tab>(),
                                                    .older: Array<Tab>()]
     fileprivate let tabManager: TabManager
-    fileprivate let viewController: TabTrayV2ViewController
+    fileprivate let viewController: ChronologicalTabsViewController
     private var isPrivate = false
     var isInPrivateMode: Bool {
         return isPrivate
@@ -32,7 +32,7 @@ class TabTrayV2ViewModel: NSObject {
         return isPrivate && getTabs().isEmpty
     }
 
-    init(viewController: TabTrayV2ViewController) {
+    init(viewController: ChronologicalTabsViewController) {
         self.viewController = viewController
         self.tabManager = BrowserViewController.foregroundBVC().tabManager
         self.isPrivate = tabManager.selectedTab?.isPrivate ?? false
@@ -134,16 +134,16 @@ class TabTrayV2ViewModel: NSObject {
         
         switch section {
         case .today:
-            sectionHeader = Strings.TabTrayV2TodayHeader
+            sectionHeader = .TabTrayV2TodayHeader
             date = dateFormatter.string(from: Date())
         case .yesterday:
-            sectionHeader = Strings.TabTrayV2YesterdayHeader
+            sectionHeader = .TabTrayV2YesterdayHeader
             date = dateFormatter.string(from: Date.yesterday)
         case .lastWeek:
-            sectionHeader = Strings.TabTrayV2LastWeekHeader
+            sectionHeader = .TabTrayV2LastWeekHeader
             date = dateIntervalFormatter.string(from: Date().lastWeek, to: Date(timeInterval: 6.0 * 24.0 * 3600.0, since: Date().lastWeek))
         case .older:
-            sectionHeader = Strings.TabTrayV2OlderHeader
+            sectionHeader = .TabTrayV2OlderHeader
             date = ""
         default:
             sectionHeader = ""
@@ -160,7 +160,8 @@ class TabTrayV2ViewModel: NSObject {
         }
 
         let tabCount = self.getTabs().count
-        tabManager.removeTabAndUpdateSelectedIndex(tab)
+        tabManager.removeTab(tab)
+        NotificationCenter.default.post(name: .TabClosed, object: nil)
         if tabCount == 1 && self.getTabs().count == 1 {
             // The last tab was removed. Dismiss the tab tray
             self.viewController.dismissTabTray()
@@ -255,7 +256,7 @@ extension TabTrayV2ViewModel: TabEventHandler {
 extension TabTrayV2ViewModel: TabManagerDelegate {
     func tabManager(_ tabManager: TabManager, didSelectedTabChange selected: Tab?, previous: Tab?, isRestoring: Bool) { }
 
-    func tabManager(_ tabManager: TabManager, didAddTab tab: Tab, isRestoring: Bool) { }
+    func tabManager(_ tabManager: TabManager, didAddTab tab: Tab, placeNextToParentTab: Bool, isRestoring: Bool) { }
     
     func tabManager(_ tabManager: TabManager, didRemoveTab tab: Tab, isRestoring: Bool) {
         for (section, tabs) in dataStore {

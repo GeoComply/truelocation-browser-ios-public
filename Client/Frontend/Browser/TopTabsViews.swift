@@ -1,85 +1,39 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
 
-struct TopTabsSeparatorUX {
-    static let Identifier = "Separator"
-    static let Width: CGFloat = 1
-}
-
-class TopTabsSeparator: UICollectionReusableView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        self.backgroundColor = UIColor.theme.topTabs.separator
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-class TopTabsHeaderFooter: UICollectionReusableView {
-    let line = UIView()
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        line.semanticContentAttribute = .forceLeftToRight
-        addSubview(line)
-        line.backgroundColor = UIColor.theme.topTabs.separator
-    }
-
-    func arrangeLine(_ kind: String) {
-        line.snp.removeConstraints()
-        switch kind {
-        case UICollectionView.elementKindSectionHeader:
-                line.snp.makeConstraints { make in
-                    make.trailing.equalTo(self)
-                }
-        case UICollectionView.elementKindSectionFooter:
-                line.snp.makeConstraints { make in
-                    make.leading.equalTo(self)
-                }
-            default:
-                break
-        }
-        line.snp.makeConstraints { make in
-            make.height.equalTo(TopTabsUX.SeparatorHeight)
-            make.width.equalTo(TopTabsUX.SeparatorWidth)
-            make.top.equalTo(self).offset(TopTabsUX.SeparatorYOffset)
-        }
-    }
-
-    override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
-        layer.zPosition = CGFloat(layoutAttributes.zIndex)
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-class TopTabCell: UICollectionViewCell, PrivateModeUI {
+class TopTabCell: UICollectionViewCell, NotificationThemeable, TabTrayCell {
 
     static let Identifier = "TopTabCellIdentifier"
     static let ShadowOffsetSize: CGFloat = 2 //The shadow is used to hide the tab separator
 
-    var selectedTab = false {
+    var isSelectedTab = false {
         didSet {
-            backgroundColor = selectedTab ? UIColor.theme.topTabs.tabBackgroundSelected : UIColor.theme.topTabs.tabBackgroundUnselected
-            titleText.textColor = selectedTab ? UIColor.theme.topTabs.tabForegroundSelected : UIColor.theme.topTabs.tabForegroundUnselected
-            highlightLine.isHidden = !selectedTab
-            closeButton.tintColor = selectedTab ? UIColor.theme.topTabs.closeButtonSelectedTab : UIColor.theme.topTabs.closeButtonUnselectedTab
+            backgroundColor = .clear
+            titleText.textColor = UIColor.theme.topTabs.tabForegroundSelected
+            closeButton.tintColor = UIColor.theme.topTabs.closeButtonSelectedTab
             closeButton.backgroundColor = backgroundColor
             closeButton.layer.shadowColor = backgroundColor?.cgColor
-            if selectedTab {
-                drawShadow()
-            } else {
-                self.layer.shadowOpacity = 0
-            }
+            selectedBackground.isHidden = !isSelectedTab
         }
     }
+
+    let selectedBackground: UIView = {
+        let view = UIView()
+        view.clipsToBounds = false
+        view.backgroundColor = UIColor.theme.topTabs.tabBackgroundSelected
+        view.layer.cornerRadius = TopTabsUX.TabCornerRadius
+        view.layer.shadowColor = UIColor(rgb: 0x3a3944).cgColor
+        view.layer.shadowRadius = 2
+        view.layer.shadowOpacity = 0.1
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.masksToBounds = false
+
+        return view
+    }()
 
     let titleText: UILabel = {
         let titleText = UILabel()
@@ -89,6 +43,7 @@ class TopTabCell: UICollectionViewCell, PrivateModeUI {
         titleText.lineBreakMode = .byCharWrapping
         titleText.font = DynamicFontHelper.defaultHelper.DefaultSmallFont
         titleText.semanticContentAttribute = .forceLeftToRight
+        titleText.isAccessibilityElement = false
         return titleText
     }()
 
@@ -112,29 +67,23 @@ class TopTabCell: UICollectionViewCell, PrivateModeUI {
         return closeButton
     }()
 
-    let highlightLine: UIView = {
-        let line = UIView()
-        line.backgroundColor = UIColor.Photon.Blue60
-        line.isHidden = true
-        line.semanticContentAttribute = .forceLeftToRight
-        return line
-    }()
-
     weak var delegate: TopTabCellDelegate?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
 
         closeButton.addTarget(self, action: #selector(closeTab), for: .touchUpInside)
+        [selectedBackground, titleText, closeButton, favicon].forEach(addSubview)
 
-        contentView.addSubview(titleText)
-        contentView.addSubview(closeButton)
-        contentView.addSubview(favicon)
-        contentView.addSubview(highlightLine)
+        selectedBackground.snp.makeConstraints { make in
+            make.width.equalTo(self)
+            make.height.equalTo(self).multipliedBy(0.82)
+            make.center.equalTo(self)
+        }
 
         favicon.snp.makeConstraints { make in
             make.centerY.equalTo(self).offset(TopTabsUX.TabNudge)
-            make.size.equalTo(TabTrayControllerUX.FaviconSize)
+            make.size.equalTo(GridTabTrayControllerUX.FaviconSize)
             make.leading.equalTo(self).offset(TopTabsUX.TabTitlePadding)
         }
         titleText.snp.makeConstraints { make in
@@ -149,55 +98,29 @@ class TopTabCell: UICollectionViewCell, PrivateModeUI {
             make.width.equalTo(self.snp.height).offset(-TopTabsUX.TabTitlePadding)
             make.trailing.equalTo(self.snp.trailing)
         }
-        highlightLine.snp.makeConstraints { make in
-            make.top.equalTo(self)
-            make.leading.equalTo(self).offset(-TopTabCell.ShadowOffsetSize)
-            make.trailing.equalTo(self).offset(TopTabCell.ShadowOffsetSize)
-            make.height.equalTo(TopTabsUX.HighlightLineWidth)
-        }
 
         self.clipsToBounds = false
-
-        applyUIMode(isPrivate: false)
     }
 
-    func applyUIMode(isPrivate: Bool) {
-        highlightLine.backgroundColor = UIColor.theme.topTabs.tabSelectedIndicatorBar(isPrivate)
-    }
+    func configureWith(tab: Tab, isSelected selected: Bool) {
+        isSelectedTab = selected
 
-    func configureWith(tab: Tab, isSelected: Bool) {
-        applyUIMode(isPrivate: tab.isPrivate)
-        self.titleText.text = tab.displayTitle
+        titleText.text = getTabTrayTitle(tab: tab)
+        accessibilityLabel = getA11yTitleLabel(tab: tab)
+        isAccessibilityElement = true
 
-        if tab.displayTitle.isEmpty {
-            if let url = tab.webView?.url, let internalScheme = InternalURL(url) {
-                self.titleText.text = Strings.AppMenuNewTabTitleString
-                self.accessibilityLabel = internalScheme.aboutComponent
-            } else {
-                self.titleText.text = tab.webView?.url?.absoluteDisplayString
-            }
-            
-            self.closeButton.accessibilityLabel = String(format: Strings.TopSitesRemoveButtonAccessibilityLabel, self.titleText.text ?? "")
+        closeButton.accessibilityLabel = String(format: .TopSitesRemoveButtonAccessibilityLabel, self.titleText.text ?? "")
+
+        let hideCloseButton = frame.width < 148 && !selected
+        closeButton.isHidden = hideCloseButton
+
+        if let favIcon = tab.displayFavicon, let url = URL(string: favIcon.url) {
+            favicon.sd_setImage(with: url, placeholderImage: UIImage(named: "defaultFavicon"), options: [], completed: nil)
         } else {
-            self.accessibilityLabel = tab.displayTitle
-            self.closeButton.accessibilityLabel = String(format: Strings.TopSitesRemoveButtonAccessibilityLabel, tab.displayTitle)
-        }
-
-        self.selectedTab = isSelected
-        if let siteURL = tab.url?.displayURL {
-            self.favicon.contentMode = .center
-            self.favicon.setImageAndBackground(forIcon: tab.displayFavicon, website: siteURL) { [weak self] in
-                guard let self = self else { return }
-                self.favicon.image = self.favicon.image?.createScaled(CGSize(width: 15, height: 15))
-                if self.favicon.backgroundColor == .clear {
-                    self.favicon.backgroundColor = .white
-                }
-            }
-        } else {
-            self.favicon.image = UIImage(named: "defaultFavicon")
-            self.favicon.tintColor = UIColor.theme.tabTray.faviconTint
-            self.favicon.contentMode = .scaleAspectFit
-            self.favicon.backgroundColor = .clear
+            favicon.image = UIImage(named: "defaultFavicon")
+            favicon.tintColor = UIColor.theme.tabTray.faviconTint
+            favicon.contentMode = .scaleAspectFit
+            favicon.backgroundColor = .clear
         }
     }
 
@@ -205,41 +128,39 @@ class TopTabCell: UICollectionViewCell, PrivateModeUI {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        self.layer.shadowOpacity = 0
-    }
-
     @objc func closeTab() {
         delegate?.tabCellDidClose(self)
-    }
-
-    // When a tab is selected the shadow prevents the tab separators from showing.
-    func drawShadow() {
-        self.layer.masksToBounds = false
-        self.layer.shadowColor = backgroundColor?.cgColor
-        self.layer.shadowOpacity  = 1
-        self.layer.shadowRadius = 0
-
-        self.layer.shadowPath = UIBezierPath(roundedRect: CGRect(width: self.frame.size.width + (TopTabCell.ShadowOffsetSize * 2), height: self.frame.size.height), cornerRadius: 0).cgPath
-        self.layer.shadowOffset = CGSize(width: -TopTabCell.ShadowOffsetSize, height: 0)
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         layer.zPosition = CGFloat(layoutAttributes.zIndex)
     }
+
+    func applyTheme() {
+        selectedBackground.backgroundColor = UIColor.theme.topTabs.tabBackgroundSelected
+    }
 }
 
 class TopTabFader: UIView {
-    lazy var hMaskLayer: CAGradientLayer = {
-        let innerColor: CGColor = UIColor.Photon.White100.cgColor
-        let outerColor: CGColor = UIColor(white: 1, alpha: 0.0).cgColor
+    
+    enum ActiveSide {
+        case left
+        case right
+        case both
+        case none
+    }
+    
+    private var activeSide: ActiveSide = .both
+    
+    private lazy var hMaskLayer: CAGradientLayer = {
         let hMaskLayer = CAGradientLayer()
-        hMaskLayer.colors = [outerColor, innerColor, innerColor, outerColor]
-        hMaskLayer.locations = [0.00, 0.005, 0.995, 1.0]
+        let innerColor = UIColor.Photon.White100.cgColor
+        let outerColor = UIColor(white: 1, alpha: 0.0).cgColor
+        
+        hMaskLayer.anchorPoint = .zero
         hMaskLayer.startPoint = CGPoint(x: 0, y: 0.5)
         hMaskLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
-        hMaskLayer.anchorPoint = .zero
+        hMaskLayer.colors = [outerColor, innerColor, innerColor, outerColor]
         return hMaskLayer
     }()
 
@@ -247,14 +168,35 @@ class TopTabFader: UIView {
         super.init(frame: .zero)
         layer.mask = hMaskLayer
     }
-
+    
+    func setFader(forSides side: ActiveSide) {
+        if activeSide != side {
+            self.activeSide = side
+            setNeedsLayout()
+        }
+    }
+    
     internal override func layoutSubviews() {
         super.layoutSubviews()
 
         let widthA = NSNumber(value: Float(CGFloat(8) / frame.width))
         let widthB = NSNumber(value: Float(1 - CGFloat(8) / frame.width))
 
-        hMaskLayer.locations = [0.00, widthA, widthB, 1.0]
+        // decide on which side the fader should be applied
+        switch activeSide {
+        case .left:
+            hMaskLayer.locations = [0.00, widthA, 1.0, 1.0]
+            
+        case .right:
+            hMaskLayer.locations = [0.00, 0.00, widthB, 1.0]
+            
+        case .both:
+            hMaskLayer.locations = [0.00, widthA, widthB, 1.0]
+            
+        case .none:
+            hMaskLayer.locations = [0.00, 0.00, 1.0, 1.0]
+        }
+        
         hMaskLayer.frame = CGRect(width: frame.width, height: frame.height)
     }
 

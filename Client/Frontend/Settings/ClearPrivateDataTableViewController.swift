@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -30,13 +30,19 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
     // Bug 1445687 -- https://bugzilla.mozilla.org/show_bug.cgi?id=1445687
     fileprivate lazy var clearables: [(clearable: Clearable, checked: DefaultCheckedState)] = {
         var items: [(clearable: Clearable, checked: DefaultCheckedState)] = [
-            (HistoryClearable(profile: self.profile), true),
+            (HistoryClearable(profile: self.profile, tabManager: tabManager), true),
             (CacheClearable(tabManager: self.tabManager), true),
             (CookiesClearable(tabManager: self.tabManager), true),
             (SiteDataClearable(tabManager: self.tabManager), true),
             (TrackingProtectionClearable(), true),
-            (DownloadedFilesClearable(), false) // Don't clear downloaded files by default
+            (DownloadedFilesClearable(), false), // Don't clear downloaded files by default
         ]
+
+        if let experimental = Experiments.shared.getVariables(featureId: .search).getVariables("spotlight"),
+           experimental.getBool("enabled") == true { // i.e. defaults to false
+            items.append((SpotlightClearable(), false)) // On device only, so don't clear by default.)
+        }
+
         return items
     }()
 
@@ -59,7 +65,7 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = Strings.SettingsDataManagementTitle
+        title = .SettingsDataManagementTitle
 
         tableView.register(ThemedTableSectionHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: SectionHeaderFooterIdentifier)
 
@@ -72,7 +78,7 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
 
         if indexPath.section == SectionArrow {
             cell.accessoryType = .disclosureIndicator
-            cell.textLabel?.text = Strings.SettingsWebsiteDataTitle
+            cell.textLabel?.text = .SettingsWebsiteDataTitle
             cell.accessibilityIdentifier = "WebsiteData"
             clearButton = cell
         } else if indexPath.section == SectionToggles {
@@ -86,7 +92,7 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
             control.tag = indexPath.item
         } else {
             assert(indexPath.section == SectionButton)
-            cell.textLabel?.text = Strings.SettingsClearPrivateDataClearButton
+            cell.textLabel?.text = .SettingsClearPrivateDataClearButton
             cell.textLabel?.textAlignment = .center
             cell.textLabel?.textColor = UIColor.theme.general.destructiveRed
             cell.accessibilityTraits = UIAccessibilityTraits.button
@@ -144,7 +150,6 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
                     .allSucceed()
                     .uponQueue(.main) { result in
                         assert(result.isSuccess, "Private data cleared successfully")
-
                         self.profile.prefs.setObject(self.toggles, forKey: TogglesPrefKey)
 
                         // Disable the Clear Private Data button after it's clicked.
@@ -178,7 +183,7 @@ class ClearPrivateDataTableViewController: ThemedTableViewController {
         let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: SectionHeaderFooterIdentifier) as? ThemedTableSectionHeaderFooterView
         var sectionTitle: String?
         if section == SectionToggles {
-            sectionTitle = Strings.SettingsClearPrivateDataTitle
+            sectionTitle = .SettingsClearPrivateDataSectionName
         } else {
             sectionTitle = nil
         }

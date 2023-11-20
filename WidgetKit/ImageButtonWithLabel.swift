@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 #if canImport(WidgetKit)
 import SwiftUI
@@ -70,10 +70,18 @@ struct ImageButtonWithLabel: View {
                 VStack (alignment: .center, spacing: 50.0){
                     HStack(alignment: .top) {
                         VStack(alignment: .leading){
+                            if isSmall {
                                 Text(link.label)
                                     .font(.headline)
                                     .minimumScaleFactor(0.75)
                                     .layoutPriority(1000)
+                            } else {
+                                Text(link.label)
+                                    .font(.footnote)
+                                    .minimumScaleFactor(0.75)
+                                    .layoutPriority(1000)
+                            }
+                                
                         }
                         Spacer()
                         if link == .search && isSmall {
@@ -89,6 +97,10 @@ struct ImageButtonWithLabel: View {
                     if isSmall {
                         HStack(alignment: .bottom){
                             Spacer()
+                            // Overriden
+                            /*
+                            Image("faviconFox")
+                             */
                             Image("icon_browser")
                                 .scaledToFit()
                                 .frame(height: 24.0)
