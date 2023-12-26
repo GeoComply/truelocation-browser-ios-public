@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
 import Storage
 
-protocol LibraryPanel: Themeable {
+protocol LibraryPanel: NotificationThemeable {
     var libraryPanelDelegate: LibraryPanelDelegate? { get set }
 }
 
@@ -22,11 +22,24 @@ protocol LibraryPanelDelegate: AnyObject {
     func libraryPanel(didSelectURLString url: String, visitType: VisitType)
 }
 
-enum LibraryPanelType: Int {
+enum LibraryPanelType: Int, CaseIterable {
     case bookmarks = 0
     case history = 1
-    case readingList = 2
-    case downloads = 3
+    case downloads = 2
+    case readingList = 3
+    
+    var title: String {
+        switch self {
+        case .bookmarks:
+            return .AppMenuBookmarksTitleString
+        case .history:
+            return .AppMenuHistoryTitleString
+        case .downloads:
+            return .AppMenuDownloadsTitleString
+        case .readingList:
+            return .AppMenuReadingListTitleString
+        }
+    }
 }
 
 /**
@@ -36,17 +49,19 @@ class LibraryPanelDescriptor {
     var viewController: UIViewController?
     var navigationController: UINavigationController?
 
-    fileprivate let makeViewController: (_ profile: Profile) -> UIViewController
+    fileprivate let makeViewController: (_ profile: Profile, _ tabManager: TabManager) -> UIViewController
     fileprivate let profile: Profile
+    fileprivate let tabManager: TabManager
 
     let imageName: String
     let activeImageName: String
     let accessibilityLabel: String
     let accessibilityIdentifier: String
 
-    init(makeViewController: @escaping ((_ profile: Profile) -> UIViewController), profile: Profile, imageName: String, accessibilityLabel: String, accessibilityIdentifier: String) {
+    init(makeViewController: @escaping ((_ profile: Profile, _ tabManager: TabManager) -> UIViewController), profile: Profile, tabManager: TabManager, imageName: String, accessibilityLabel: String, accessibilityIdentifier: String) {
         self.makeViewController = makeViewController
         self.profile = profile
+        self.tabManager = tabManager
         self.imageName = "panelIcon" + imageName
         self.activeImageName = self.imageName + "-active"
         self.accessibilityLabel = accessibilityLabel
@@ -55,7 +70,7 @@ class LibraryPanelDescriptor {
 
     func setup() {
         guard viewController == nil else { return }
-        let viewController = makeViewController(profile)
+        let viewController = makeViewController(profile, tabManager)
         self.viewController = viewController
         navigationController = ThemedNavigationController(rootViewController: viewController)
     }
@@ -63,55 +78,53 @@ class LibraryPanelDescriptor {
 
 class LibraryPanels {
     fileprivate let profile: Profile
+    fileprivate let tabManager: TabManager
 
-    init(profile: Profile) {
+    init(profile: Profile, tabManager: TabManager) {
         self.profile = profile
+        self.tabManager = tabManager
     }
 
     lazy var enabledPanels = [
         LibraryPanelDescriptor(
-            makeViewController: { profile in
+            makeViewController: { profile, tabManager  in
                 return BookmarksPanel(profile: profile)
             },
             profile: profile,
+            tabManager: tabManager,
             imageName: "Bookmarks",
             accessibilityLabel: .LibraryPanelBookmarksAccessibilityLabel,
             accessibilityIdentifier: "LibraryPanels.Bookmarks"),
 
         LibraryPanelDescriptor(
-            makeViewController: { profile in
-                return HistoryPanel(profile: profile)
+            makeViewController: { profile, tabManager in
+                return HistoryPanel(profile: profile, tabManager: tabManager)
             },
             profile: profile,
+            tabManager: tabManager,
             imageName: "History",
             accessibilityLabel: .LibraryPanelHistoryAccessibilityLabel,
             accessibilityIdentifier: "LibraryPanels.History"),
 
         LibraryPanelDescriptor(
-            makeViewController: { profile in
-                return ReadingListPanel(profile: profile)
-            },
-            profile: profile,
-            imageName: "ReadingList",
-            accessibilityLabel: .LibraryPanelReadingListAccessibilityLabel,
-            accessibilityIdentifier: "LibraryPanels.ReadingList"),
-
-        LibraryPanelDescriptor(
-            makeViewController: { profile in
+            makeViewController: { profile, tabManager in
                 return DownloadsPanel(profile: profile)
             },
             profile: profile,
+            tabManager: tabManager,
             imageName: "Downloads",
             accessibilityLabel: .LibraryPanelDownloadsAccessibilityLabel,
             accessibilityIdentifier: "LibraryPanels.Downloads"),
-
-//        LibraryPanelDescriptor(
-//            makeViewController: { profile in
-//                return RemoteTabsPanel(profile: profile)
-//            },
-//            profile: profile,
-//            imageName: "SyncedTabs",
-//            accessibilityLabel: .LibraryPanelSyncedTabsAccessibilityLabel,
-//            accessibilityIdentifier: "LibraryPanels.SyncedTabs"),
+        
+        // Overriden // Reading List, old Browser removed but keep showing in list.
+        LibraryPanelDescriptor(
+            makeViewController: { profile, tabManager in
+                return ReadingListPanel(profile: profile)
+            },
+            profile: profile,
+            tabManager: tabManager,
+            imageName: "ReadingList",
+            accessibilityLabel: .LibraryPanelReadingListAccessibilityLabel,
+            accessibilityIdentifier: "LibraryPanels.ReadingList")
     ]
 }

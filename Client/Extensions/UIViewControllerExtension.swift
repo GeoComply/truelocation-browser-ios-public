@@ -16,9 +16,9 @@ enum NavigationItemText {
     func localizedString() -> String {
         switch self {
         case .Done:
-            return Strings.SettingsSearchDoneButton
+            return .SettingsSearchDoneButton
         case .Close:
-            return Strings.CloseButtonTitle
+            return .CloseButtonTitle
         }
     }
 }
@@ -32,6 +32,21 @@ struct ViewControllerConsts {
 }
 
 extension UIViewController {
+    /// Determines whether, based on size class, the particular view controller should
+    /// use iPad setup, as defined by design requirements. All iPad devices use a
+    /// combination of either (.compact, .regular) or (.regular, .regular) size class
+    /// for (width, height) for both fullscreen AND multi-tasking layouts. In some
+    /// instances, we may wish to use iPhone layouts on the iPad when its size class
+    /// is of type (.compact, .regular).
+    func shouldUseiPadSetup(traitCollection: UITraitCollection? = nil) -> Bool {
+        let trait = traitCollection == nil ? self.traitCollection : traitCollection
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return trait!.horizontalSizeClass != .compact
+        }
+
+        return false
+    }
+
     /// This presents a View Controller with a bar button item that can be used to dismiss the VC
     /// - Parameters:
     ///     - navItemLocation: Define whether dismiss bar button item should be on the right or left of the navigation bar
@@ -55,11 +70,23 @@ extension UIViewController {
         } else {
             themedNavigationController.modalPresentationStyle = .fullScreen
         }
-        self.present(themedNavigationController, animated: true, completion: nil)
+        presentWithModalDismissIfNeeded(themedNavigationController, animated: true)
     }
     
     @objc func dismissVC() {
         self.dismiss(animated: true, completion: nil)
+    }
+
+    /// A convenience function to dismiss modal presentation views if they are
+    /// currently presented.
+    func presentWithModalDismissIfNeeded(_ viewController: UIViewController, animated: Bool) {
+        if let presentedViewController = presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: {
+                self.present(viewController, animated: animated, completion: nil)
+            })
+        } else {
+            present(viewController, animated: animated, completion: nil)
+        }
     }
 }
  

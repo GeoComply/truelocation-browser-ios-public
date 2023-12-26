@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import XCGLogger
@@ -8,8 +8,10 @@ import SwiftyJSON
 import Shared
 
 private let log = Logger.browserLogger
-//private let ServerURL = "https://incoming.telemetry.mozilla.org".asURL!
-//private let AppName = "Fennec"
+/*
+private let ServerURL = "https://incoming.telemetry.mozilla.org".asURL!
+private let AppName = "Fennec"
+*/
 
 public enum TelemetryDocType: String {
     case core = "core"
@@ -39,7 +41,52 @@ open class SyncTelemetry {
     }
 
     open class func send(ping: SyncTelemetryPing, docType: TelemetryDocType) {
-        NSLog("TrueLocationBrowser-Log: \(#file) - \(#function)")
+        NSLog("Browser-Log: \(#file) - \(#function)")
+        
+        /*
+        let docID = UUID().uuidString
+        let appVersion = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
+        let buildID = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
+
+        let channel = AppConstants.BuildChannel.rawValue
+        let path = "/submit/telemetry/\(docID)/\(docType.rawValue)/\(AppName)/\(appVersion)/\(channel)/\(buildID)"
+        let url = ServerURL.appendingPathComponent(path)
+        var request = URLRequest(url: url)
+
+        log.debug("Ping URL: \(url)")
+        log.debug("Ping payload: \(ping.payload.stringify() ?? "")")
+
+        // Don't add the common ping format for the mobile core ping.
+        let pingString: String?
+        if docType != .core {
+            var json = JSON(commonPingFormat(forType: docType))
+            json["payload"] = ping.payload
+            pingString = json.stringify()
+        } else {
+            pingString = ping.payload.stringify()
+        }
+
+        guard let body = pingString?.data(using: .utf8) else {
+            log.error("Invalid data!")
+            assertionFailure()
+            return
+        }
+
+        guard channel != "default" else {
+            log.debug("Non-release build; not sending ping")
+            return
+        }
+
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.addValue(Date().toRFC822String(), forHTTPHeaderField: "Date")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        makeURLSession(userAgent: UserAgent.fxaUserAgent, configuration: URLSessionConfiguration.ephemeral).dataTask(with: request) { (_, response, error) in
+            let code = (response as? HTTPURLResponse)?.statusCode
+            log.debug("Ping response: \(code ?? -1).")
+        }.resume()
+         */
     }
 
     private static func commonPingFormat(forType type: TelemetryDocType) -> [String: Any] {

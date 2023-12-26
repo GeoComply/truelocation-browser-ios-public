@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Storage
@@ -53,12 +53,14 @@ protocol TabEventHandler: AnyObject {
     func tab(_ tab: Tab, didChangeURL url: URL)
     func tab(_ tab: Tab, didLoadPageMetadata metadata: PageMetadata)
     func tabMetadataNotAvailable(_ tab: Tab)
+    func tab(_ tab: Tab, didLoadReadability page: ReadabilityResult)
     func tab(_ tab: Tab, didLoadFavicon favicon: Favicon?, with: Data?)
     func tabDidGainFocus(_ tab: Tab)
     func tabDidLoseFocus(_ tab: Tab)
     func tabDidClose(_ tab: Tab)
     func tabDidToggleDesktopMode(_ tab: Tab)
     func tabDidChangeContentBlocking(_ tab: Tab)
+    func tabDidSetScreenshot(_ tab: Tab, hasHomeScreenshot: Bool)
 }
 
 // Provide default implmentations, because we don't want to litter the code with
@@ -67,17 +69,20 @@ extension TabEventHandler {
     func tab(_ tab: Tab, didChangeURL url: URL) {}
     func tab(_ tab: Tab, didLoadPageMetadata metadata: PageMetadata) {}
     func tabMetadataNotAvailable(_ tab: Tab) {}
+    func tab(_ tab: Tab, didLoadReadability page: ReadabilityResult) {}
     func tab(_ tab: Tab, didLoadFavicon favicon: Favicon?, with: Data?) {}
     func tabDidGainFocus(_ tab: Tab) {}
     func tabDidLoseFocus(_ tab: Tab) {}
     func tabDidClose(_ tab: Tab) {}
     func tabDidToggleDesktopMode(_ tab: Tab) {}
     func tabDidChangeContentBlocking(_ tab: Tab) {}
+    func tabDidSetScreenshot(_ tab: Tab, hasHomeScreenshot: Bool) {}
 }
 
 enum TabEventLabel: String {
     case didChangeURL
     case didLoadPageMetadata
+    case didLoadReadability
     case pageMetadataNotAvailable
     case didLoadFavicon
     case didGainFocus
@@ -85,6 +90,7 @@ enum TabEventLabel: String {
     case didClose
     case didToggleDesktopMode
     case didChangeContentBlocking
+    case didSetScreenshot
 }
 
 // Names of events must be unique!
@@ -92,12 +98,14 @@ enum TabEvent {
     case didChangeURL(URL)
     case didLoadPageMetadata(PageMetadata)
     case pageMetadataNotAvailable
+    case didLoadReadability(ReadabilityResult)
     case didLoadFavicon(Favicon?, with: Data?)
     case didGainFocus
     case didLoseFocus
     case didClose
     case didToggleDesktopMode
     case didChangeContentBlocking
+    case didSetScreenshot(isHome: Bool)
 
     var label: TabEventLabel {
         let str = "\(self)".components(separatedBy: "(")[0] // Will grab just the name from 'didChangeURL(...)'
@@ -115,6 +123,8 @@ enum TabEvent {
             handler.tab(tab, didLoadPageMetadata: metadata)
         case .pageMetadataNotAvailable:
             handler.tabMetadataNotAvailable(tab)
+        case .didLoadReadability(let result):
+            handler.tab(tab, didLoadReadability: result)
         case .didLoadFavicon(let favicon, let data):
             handler.tab(tab, didLoadFavicon: favicon, with: data)
         case .didGainFocus:
@@ -127,6 +137,8 @@ enum TabEvent {
             handler.tabDidToggleDesktopMode(tab)
         case .didChangeContentBlocking:
             handler.tabDidChangeContentBlocking(tab)
+        case .didSetScreenshot(let hasHomeScreenshot):
+            handler.tabDidSetScreenshot(tab, hasHomeScreenshot: hasHomeScreenshot)
         }
     }
 }

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 
@@ -89,7 +89,7 @@ extension URL {
 }
 
 // The list of permanent URI schemes has been taken from http://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
-private let permanentURISchemes = ["aaa", "aaas", "about", "acap", "acct", "cap", "cid", "coap", "coaps", "crid", "data", "dav", "dict", "dns", "example", "file", "ftp", "geo", "go", "gopher", "h323", "http", "https", "iax", "icap", "im", "imap", "info", "ipp", "ipps", "iris", "iris.beep", "iris.lwz", "iris.xpc", "iris.xpcs", "jabber", "javascript", "ldap", "mailto", "mid", "msrp", "msrps", "mtqp", "mupdate", "news", "nfs", "ni", "nih", "nntp", "opaquelocktoken", "pkcs11", "pop", "pres", "reload", "rtsp", "rtsps", "rtspu", "service", "session", "shttp", "sieve", "sip", "sips", "sms", "snmp", "soap.beep", "soap.beeps", "stun", "stuns", "tag", "tel", "telnet", "tftp", "thismessage", "tip", "tn3270", "turn", "turns", "tv", "urn", "vemmi", "vnc", "ws", "wss", "xcon", "xcon-userid", "xmlrpc.beep", "xmlrpc.beeps", "xmpp", "z39.50r", "z39.50s"]
+private let permanentURISchemes = ["aaa", "aaas", "about", "acap", "acct", "cap", "cid", "coap", "coaps", "crid", "data", "dav", "dict", "dns", "dtn", "example", "file", "ftp", "geo", "go", "gopher", "h323", "http", "https", "iax", "icap", "im", "imap", "info", "ipn", "ipp", "ipps", "iris", "iris.beep", "iris.lwz", "iris.xpc", "iris.xpcs", "jabber", "ldap", "leaptofrogans", "mailto", "mid", "msrp", "msrps", "mtqp", "mupdate", "news", "nfs", "ni", "nih", "nntp", "opaquelocktoken", "pkcs11", "pop", "pres", "reload", "rtsp", "rtsps", "rtspu", "service", "session", "shttp", "sieve", "sip", "sips", "sms", "snmp", "soap.beep", "soap.beeps", "stun", "stuns", "tag", "tel", "telnet", "tftp", "thismessage", "tip", "tn3270", "turn", "turns", "tv", "urn", "vemmi", "vnc", "ws", "wss", "xcon", "xcon-userid", "xmlrpc.beep", "xmlrpc.beeps", "xmpp", "z39.50r", "z39.50s"]
 
 extension URL {
 
@@ -257,6 +257,7 @@ extension URL {
         if let range = host.range(of: "^(www|mobile|m)\\.", options: .regularExpression) {
             host.replaceSubrange(range, with: "")
         }
+        guard host != publicSuffix else { return nil }
 
         return host
     }
@@ -315,6 +316,11 @@ extension URL {
         }
         return urls[0] == urls[1]
     }
+    
+    public var isFxHomeUrl: Bool {
+        return absoluteString.hasPrefix("internal://local/about/home")
+    }
+    
 }
 
 // Extensions to deal with ReaderMode URLs
@@ -348,6 +354,27 @@ extension URL {
         }
         return nil
     }
+}
+
+// MARK: - Exported URL Schemes
+
+extension URL {
+
+    public static var mozPublicScheme: String = {
+        guard let string = Bundle.main.object(forInfoDictionaryKey: "MozPublicURLScheme") as? String, !string.isEmpty else {
+            // Something went wrong/weird, fall back to hard-coded.
+            return "firefox"
+        }
+        return string
+    }()
+
+    public static var mozInternalScheme: String = {
+        guard let string = Bundle.main.object(forInfoDictionaryKey: "MozInternalURLScheme") as? String, !string.isEmpty else {
+            // Something went wrong/weird, fallback to the public one.
+            return Self.mozPublicScheme
+        }
+        return string
+    }()
 }
 
 // Helpers to deal with ErrorPage URLs

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -109,11 +109,28 @@ extension Date {
     public func toRFC822String() -> String {
         return rfc822DateFormatter.string(from: self)
     }
+    
+    public static func difference(recent: Date, previous: Date) -> (month: Int?, day: Int?, hour: Int?, minute: Int?, second: Int?) {
+        let day = Calendar.current.dateComponents([.day], from: previous, to: recent).day
+        let month = Calendar.current.dateComponents([.month], from: previous, to: recent).month
+        let hour = Calendar.current.dateComponents([.hour], from: previous, to: recent).hour
+        let minute = Calendar.current.dateComponents([.minute], from: previous, to: recent).minute
+        let second = Calendar.current.dateComponents([.second], from: previous, to: recent).second
+
+        return (month: month, day: day, hour: hour, minute: minute, second: second)
+    }
+    
+    static func - (lhs: Date, rhs: Date) -> TimeInterval {
+        return lhs.timeIntervalSinceReferenceDate - rhs.timeIntervalSinceReferenceDate
+    }
 }
 
 extension Date {
     public static var yesterday: Date { return Date().dayBefore }
     public static var tomorrow: Date { return Date().dayAfter }
+    public var lastTwoWeek: Date {
+        return Calendar.current.date(byAdding: .day, value: -14, to: noon) ?? Date()
+    }
     public var lastWeek: Date {
         return Calendar.current.date(byAdding: .day, value: -8, to: noon) ?? Date()
     }
@@ -150,8 +167,7 @@ let MaxTimestampAsDouble = Double(UInt64.max)
  *  when seconds were expected.
  */
 public func someKindOfTimestampStringToTimestamp(_ input: String) -> Timestamp? {
-    var double = 0.0
-    if Scanner(string: input).scanDouble(&double) {
+    if let double = Scanner(string: input).scanDouble() {
         // This should never happen. Hah!
         if double.isNaN || double.isInfinite {
             return nil
@@ -185,8 +201,7 @@ public func someKindOfTimestampStringToTimestamp(_ input: String) -> Timestamp? 
 }
 
 public func decimalSecondsStringToTimestamp(_ input: String) -> Timestamp? {
-    var double = 0.0
-    if Scanner(string: input).scanDouble(&double) {
+    if let double = Scanner(string: input).scanDouble() {
         // This should never happen. Hah!
         if double.isNaN || double.isInfinite {
             return nil
@@ -212,4 +227,9 @@ public func decimalSecondsStringToTimestamp(_ input: String) -> Timestamp? {
 public func millisecondsToDecimalSeconds(_ input: Timestamp) -> String {
     let val = Double(input) / 1000
     return String(format: "%.2F", val)
+}
+
+public func millisecondsToSeconds(_ input: Timestamp) -> UInt64 {
+    let val = input / 1000
+    return val
 }

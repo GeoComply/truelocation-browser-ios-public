@@ -1,13 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
-import SnapKit
 
-class ASLibraryCell: UICollectionViewCell, Themeable {
+class ASLibraryCell: UICollectionViewCell, ReusableCell, NotificationThemeable {
 
-    var mainView = UIStackView()
+    var mainView: UIStackView = .build()
 
     struct LibraryPanel {
         let title: String
@@ -17,41 +16,54 @@ class ASLibraryCell: UICollectionViewCell, Themeable {
 
     var libraryButtons: [LibraryShortcutView] = []
 
-    let bookmarks = LibraryPanel(title: Strings.AppMenuBookmarksTitleString, image: UIImage.templateImageNamed("menu-Bookmark"), color: UIColor.Photon.Blue50)
-    let history = LibraryPanel(title: Strings.AppMenuHistoryTitleString, image: UIImage.templateImageNamed("menu-panel-History"), color: UIColor.Photon.Orange50)
-    let readingList = LibraryPanel(title: Strings.AppMenuReadingListTitleString, image: UIImage.templateImageNamed("menu-panel-ReadingList"), color: UIColor.Photon.Teal60)
-    let downloads = LibraryPanel(title: Strings.AppMenuDownloadsTitleString, image: UIImage.templateImageNamed("menu-panel-Downloads"), color: UIColor.Photon.Magenta60)
+    let bookmarks = LibraryPanel(title: .AppMenuBookmarksTitleString,
+                                 image: UIImage.templateImageNamed(ImageIdentifiers.addToBookmark),
+                                 color: UIColor.Photon.Blue40)
+    let history = LibraryPanel(title: .AppMenuHistoryTitleString,
+                               image: UIImage.templateImageNamed(ImageIdentifiers.history),
+                               color: UIColor.Photon.Violet50)
+    let readingList = LibraryPanel(title: .AppMenuReadingListTitleString,
+                                   image: UIImage.templateImageNamed(ImageIdentifiers.readingList),
+                                   color: UIColor.Photon.Pink40)
+    let downloads = LibraryPanel(title: .AppMenuDownloadsTitleString,
+                                 image: UIImage.templateImageNamed(ImageIdentifiers.downloads),
+                                 color: UIColor.Photon.Green60)
 
     override init(frame: CGRect) {
-            super.init(frame: frame)
-            mainView.distribution = .fillEqually
-            mainView.spacing = 10
-            addSubview(mainView)
-            mainView.snp.makeConstraints { make in
-                make.edges.equalTo(self)
-            }
-            // GG Overriden
-            [bookmarks, readingList, downloads/*, syncedTabs*/].forEach { item in
-                let view = LibraryShortcutView()
-                view.button.setImage(item.image, for: .normal)
-                view.title.text = item.title
-                let words = view.title.text?.components(separatedBy: NSCharacterSet.whitespacesAndNewlines).count
-                view.title.numberOfLines = words == 1 ? 1 :2
-                view.button.backgroundColor = item.color
-                view.button.setTitleColor(UIColor.theme.homePanel.topSiteDomain, for: .normal)
-                view.accessibilityLabel = item.title
-                mainView.addArrangedSubview(view)
-                libraryButtons.append(view)
-            }
+        super.init(frame: frame)
+        mainView.distribution = .equalCentering
+        addSubview(mainView)
+
+        NSLayoutConstraint.activate([
+            mainView.topAnchor.constraint(equalTo: topAnchor),
+            mainView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            mainView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            mainView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
+
+        [bookmarks, history, downloads, readingList].forEach { item in
+            let view = LibraryShortcutView()
+            view.button.setImage(item.image, for: .normal)
+            view.titleLabel.text = item.title
+            let words = view.titleLabel.text?.components(separatedBy: NSCharacterSet.whitespacesAndNewlines).count
+            view.titleLabel.numberOfLines = words == 1 ? 1 : 2
+            view.button.tintColor = item.color
+            view.accessibilityLabel = item.title
+            mainView.addArrangedSubview(view)
+            libraryButtons.append(view)
         }
-    
+    }
+
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     func applyTheme() {
         libraryButtons.forEach { button in
-            button.title.textColor = UIColor.theme.homePanel.activityStreamCellTitle
+            button.titleLabel.textColor = UIColor.theme.homePanel.activityStreamCellTitle
+            button.button.backgroundColor = UIColor.theme.homePanel.shortcutBackground
+            button.button.layer.shadowColor = UIColor.theme.homePanel.shortcutShadowColor
+            button.button.layer.shadowOpacity = UIColor.theme.homePanel.shortcutShadowOpacity
         }
     }
 
